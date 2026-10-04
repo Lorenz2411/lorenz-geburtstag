@@ -12,7 +12,15 @@
 <!-- Nur eigene Dateien laden; 'unsafe-eval' braucht die DC-Runtime (new Function) -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#0b0818">
+<!-- Seite ist bewusst dunkel: Android/Samsung-Dunkelmodus soll nichts umfärben -->
+<meta name="color-scheme" content="dark only">
 <link rel="stylesheet" href="fonts/fonts.css">
+<!-- Schriften des Warnbildschirms sofort laden (kein Springen der Schrift) -->
+<link rel="preload" href="fonts/archivo-black-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/space-grotesk-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/space-grotesk-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Fallback fuer sehr alte Browser: Vorlage verstecken, nach 2,5 s Eckdaten zeigen (wird beim Start entfernt) -->
+<style>x-dc{display:none!important} #legacy-fb{position:fixed;left:0;right:0;top:40%;padding:0 24px;text-align:center;color:#fff;font:16px/1.5 sans-serif;opacity:0;-webkit-animation:fbShow .01s 2.5s forwards!important;animation:fbShow .01s 2.5s forwards!important} @-webkit-keyframes fbShow{to{opacity:1}} @keyframes fbShow{to{opacity:1}}</style>
 <script src="vendor/react.production.min.js"></script>
 <script src="vendor/react-dom.production.min.js"></script>
 <script src="./support.js"></script>
@@ -22,6 +30,8 @@
 <x-dc>
 <helmet>
   <style>
+    html { color-scheme:dark only; -webkit-tap-highlight-color:transparent; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+    @media (prefers-color-scheme: dark){ html { color-scheme:dark only; } }
     html, body { margin:0; padding:0; background:#0b0818; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; }
     html, body { cursor: url('ant-cursor.svg') 18 10, auto; }
     a, button, [data-interactive] { cursor: url('ant-cursor.svg') 18 10, pointer; }
@@ -29,7 +39,17 @@
     a:hover { color:#5cf0d2; }
     ::selection { background:rgba(0,212,170,.35); color:#fff; }
     img, svg image { -webkit-user-drag:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
-    svg { -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; }
+    svg { -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+    /* Buehne genau so hoch wie der sichtbare Bereich (Adressleiste am Handy beruecksichtigt) */
+    .stage { height:100vh; height:100dvh; }
+    /* Hover nur mit echter Maus, sonst bleibt der Knopf nach dem Antippen vergroessert */
+    @media (hover:hover) and (pointer:fine){
+      .snd:hover { background:rgba(36,21,60,.9) !important; border-color:rgba(0,212,170,.5) !important; transform:scale(1.06); }
+      .skip:hover { background:rgba(255,255,255,.1) !important; border-color:rgba(255,255,255,.4) !important; color:#fff !important; }
+    }
+    .snd:active { transform:scale(.96); }
+    /* Animationen pausieren, solange sie nicht zu sehen sind (spart Akku, verhindert Ruckeln) */
+    .m-hall[data-off] *, .m-lorenz[data-off] *, .dc-intro svg * { animation-play-state:paused !important; }
     @keyframes twinkle {0%,100%{opacity:1}50%{opacity:.25}}
     @keyframes flicker {0%,100%{opacity:1}45%{opacity:.7}55%{opacity:.95}}
     @keyframes neonBuzz {0%,100%{opacity:1}92%{opacity:1}93%{opacity:.55}94%{opacity:1}97%{opacity:.7}98%{opacity:1}}
@@ -39,8 +59,10 @@
     @keyframes glowPulse {0%,100%{opacity:.85;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
     @keyframes pitCenterSway {0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
     @keyframes torchFlicker {0%{transform:scaleY(.94) scaleX(1.05) skewX(-4deg)}100%{transform:scaleY(1.12) scaleX(.93) skewX(4deg)}}
-    @keyframes march {from{transform:translate(400px,528px)}to{transform:translate(780px,528px)}}
-    @keyframes marchM {from{transform:translate(690px,528px)}to{transform:translate(1130px,528px)}}
+    @keyframes march {0%{transform:translate(400px,528px);opacity:0}5%,95%{opacity:1}100%{transform:translate(780px,528px);opacity:0}}
+    @keyframes marchM {0%{transform:translate(690px,528px);opacity:0}5%,95%{opacity:1}100%{transform:translate(1130px,528px);opacity:0}}
+    @keyframes moonA {0%,83.3%{opacity:1}83.4%,100%{opacity:0}}
+    @keyframes moonB {0%,83.3%{opacity:0}83.4%,100%{opacity:1}}
     @keyframes popOut {0%,16%{transform:translateY(150px)}30%,44%{transform:translateY(-6px)}48%{transform:translateY(4px)}52%,68%{transform:translateY(0)}82%,100%{transform:translateY(150px)}}
     @keyframes triLeft {0%,15%,85%,100%{transform:translate(0px,0px) rotate(-42deg) scale(.98)}45%,55%{transform:translate(-118px,22px) rotate(-16deg) scale(1.28)}}
     @keyframes triRight {0%,15%,85%,100%{transform:translate(0px,0px) rotate(42deg) scale(.98)}45%,55%{transform:translate(118px,22px) rotate(16deg) scale(1.28)}}
@@ -68,13 +90,13 @@
 
 <!-- ===================== DESKTOP ===================== -->
 <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
-<div style="position:relative; width:100%; min-height:100vh; height:100vh; overflow:hidden;">
+<div class="stage" style="position:relative; width:100%; overflow:hidden;">
 
   <div style="position:absolute; inset:0; z-index:1;">
-    <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%; display:block;" role="img" aria-label="Wimmelbild: Abend von der Bar zum Prodigy-Konzert">
+    <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%; display:block;" role="group" aria-label="Wimmelbild: Abend von der Bar zum Prodigy-Konzert">
       <defs>
         <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#fff7d6" stop-opacity="0.85"/><stop offset="100%" stop-color="#fff7d6" stop-opacity="0"/></radialGradient>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#05040c"/><stop offset="55%" stop-color="#141033"/><stop offset="100%" stop-color="#3a1d48"/></linearGradient>
+        <linearGradient id="sky" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="480"><stop offset="0%" stop-color="#05040c"/><stop offset="55%" stop-color="#141033"/><stop offset="100%" stop-color="#3a1d48"/></linearGradient>
         <linearGradient id="street" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2b2538"/><stop offset="18%" stop-color="#1b1626"/><stop offset="100%" stop-color="#0a0810"/></linearGradient>
         <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00d4aa" stop-opacity="0.55"/><stop offset="100%" stop-color="#00d4aa" stop-opacity="0"/></linearGradient>
         <linearGradient id="beam2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff3366" stop-opacity="0.55"/><stop offset="100%" stop-color="#ff3366" stop-opacity="0"/></linearGradient>
@@ -96,10 +118,10 @@
         <linearGradient id="hallVig" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#000" stop-opacity=".6"/><stop offset="30%" stop-color="#000" stop-opacity="0"/><stop offset="75%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".7"/></linearGradient>
         <linearGradient id="hallVigX" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#000" stop-opacity=".7"/><stop offset="18%" stop-color="#000" stop-opacity="0"/><stop offset="82%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".7"/></linearGradient>
         <linearGradient id="reflFade" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity=".55"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></linearGradient>
-        <radialGradient id="vignette" cx="50%" cy="55%" r="70%"><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".55"/></radialGradient>
+        <radialGradient id="vignette" gradientUnits="userSpaceOnUse" cx="600" cy="330" r="840" gradientTransform="translate(600 330) scale(1 .5) translate(-600 -330)"><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".55"/></radialGradient>
         <linearGradient id="taxiBeam" x1="1" y1="0" x2="0" y2="0"><stop offset="0%" stop-color="#ffe6b0" stop-opacity=".9"/><stop offset="100%" stop-color="#ffe6b0" stop-opacity="0"/></linearGradient>
         <filter id="beamBlur" x="-30%" y="-20%" width="160%" height="150%"><feGaussianBlur stdDeviation="7"/></filter>
-        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter><filter id="bulbGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4"/></filter>
         <filter id="bigGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10"/></filter>
         <filter id="reflBlur" x="-10%" y="-10%" width="120%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
         <filter id="dof" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="1.6"/></filter>
@@ -120,33 +142,31 @@
       </defs>
 
       <!-- Sky -->
-      <rect x="0" y="0" width="1200" height="480" fill="url(#sky)"/>
-      <g style="animation:drift 90s linear infinite"><rect x="0" y="120" width="1480" height="300" fill="#8a70b8" filter="url(#clouds)" opacity=".16"/></g>
+      <rect x="-600" y="-600" width="2400" height="1080" fill="url(#sky)"/>
+      <g style="animation:drift 90s ease-in-out infinite alternate"><rect x="-300" y="120" width="1940" height="300" fill="#8a70b8" filter="url(#clouds)" opacity=".16"/></g>
       <g fill="#fff">
+        <circle cx="80" cy="-60" r="1.3" style="animation:twinkle 2.5s ease-in-out .6s infinite"/><circle cx="380" cy="-150" r="1.1" style="animation:twinkle 2.5s ease-in-out 1.9s infinite"/><circle cx="640" cy="-40" r="1.5" style="animation:twinkle 2.5s ease-in-out .2s infinite"/><circle cx="860" cy="-190" r="1.2" style="animation:twinkle 2.5s ease-in-out 1.4s infinite"/><circle cx="1180" cy="-90" r="1.4" style="animation:twinkle 2.5s ease-in-out .9s infinite"/><circle cx="-80" cy="90" r="1.2" style="animation:twinkle 2.5s ease-in-out 2.2s infinite"/><circle cx="1290" cy="70" r="1.3" style="animation:twinkle 2.5s ease-in-out .5s infinite"/>
         <circle cx="120" cy="60" r="1.6" style="animation:twinkle 2.5s ease-in-out infinite"/><circle cx="300" cy="40" r="1.2" style="animation:twinkle 2.5s ease-in-out .8s infinite"/><circle cx="500" cy="80" r="1.6" style="animation:twinkle 2.5s ease-in-out 1.6s infinite"/><circle cx="700" cy="50" r="1.2" style="animation:twinkle 2.5s ease-in-out infinite"/><circle cx="900" cy="90" r="1.6" style="animation:twinkle 2.5s ease-in-out .8s infinite"/><circle cx="200" cy="120" r="1.2" style="animation:twinkle 2.5s ease-in-out 1.6s infinite"/><circle cx="620" cy="120" r="1.2" style="animation:twinkle 2.5s ease-in-out infinite"/><circle cx="820" cy="140" r="1.6" style="animation:twinkle 2.5s ease-in-out .8s infinite"/><circle cx="400" cy="150" r="1.1" style="animation:twinkle 2.5s ease-in-out 1.1s infinite"/><circle cx="760" cy="100" r="1.1" style="animation:twinkle 2.5s ease-in-out .4s infinite"/><circle cx="60" cy="150" r="1.1" style="animation:twinkle 2.5s ease-in-out 2s infinite"/><circle cx="1150" cy="180" r="1.2" style="animation:twinkle 2.5s ease-in-out 1.3s infinite"/>
       </g>
 
       <!-- Moon = Keith -->
       <circle cx="1050" cy="105" r="110" fill="url(#moonGlow)" opacity=".7"/>
-      <sc-if value="{{ moonFace1 }}" hint-placeholder-val="{{ true }}">
-        <filter id="keithFx0" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.9024 0.1532 0.0154 0 -0.0255  0.0456 1.01 0.0154 0 -0.0255  0.0456 0.1532 0.8722 0 -0.0255  0 0 0 1 0" result="img"/><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b1"/><feFlood flood-color="#ffe27a"/><feComposite in2="b1" operator="in" result="g1"/><feGaussianBlur in="SourceAlpha" stdDeviation="13" result="b2"/><feFlood flood-color="#ffd86b" flood-opacity=".8"/><feComposite in2="b2" operator="in" result="g2"/><feGaussianBlur in="SourceAlpha" stdDeviation="25" result="b3"/><feFlood flood-color="#ffc846" flood-opacity=".5"/><feComposite in2="b3" operator="in" result="g3"/><feMerge><feMergeNode in="g3"/><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="img"/></feMerge></filter><image href="bilder/keith-1.png" x="960" y="18" width="170" height="170" preserveAspectRatio="xMidYMid meet" filter="url(#keithFx0)"><title>Keith Flint</title></image>
-      </sc-if>
-      <sc-if value="{{ moonFace2 }}" hint-placeholder-val="{{ false }}">
-        <filter id="keithFx1" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.9024 0.1532 0.0154 0 -0.0255  0.0456 1.01 0.0154 0 -0.0255  0.0456 0.1532 0.8722 0 -0.0255  0 0 0 1 0" result="img"/><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b1"/><feFlood flood-color="#ffe27a"/><feComposite in2="b1" operator="in" result="g1"/><feGaussianBlur in="SourceAlpha" stdDeviation="13" result="b2"/><feFlood flood-color="#ffd86b" flood-opacity=".8"/><feComposite in2="b2" operator="in" result="g2"/><feGaussianBlur in="SourceAlpha" stdDeviation="25" result="b3"/><feFlood flood-color="#ffc846" flood-opacity=".5"/><feComposite in2="b3" operator="in" result="g3"/><feMerge><feMergeNode in="g3"/><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="img"/></feMerge></filter><image href="bilder/keith-2.png" x="960" y="18" width="170" height="170" preserveAspectRatio="xMidYMid meet" filter="url(#keithFx1)"><title>Keith Flint</title></image>
-      </sc-if>
+      <filter id="keithFx0" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.9024 0.1532 0.0154 0 -0.0255  0.0456 1.01 0.0154 0 -0.0255  0.0456 0.1532 0.8722 0 -0.0255  0 0 0 1 0" result="img"/><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b1"/><feFlood flood-color="#ffe27a"/><feComposite in2="b1" operator="in" result="g1"/><feGaussianBlur in="SourceAlpha" stdDeviation="13" result="b2"/><feFlood flood-color="#ffd86b" flood-opacity=".8"/><feComposite in2="b2" operator="in" result="g2"/><feGaussianBlur in="SourceAlpha" stdDeviation="25" result="b3"/><feFlood flood-color="#ffc846" flood-opacity=".5"/><feComposite in2="b3" operator="in" result="g3"/><feMerge><feMergeNode in="g3"/><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="img"/></feMerge></filter>
+      <image href="bilder/keith-1.webp" x="960" y="18" width="170" height="170" preserveAspectRatio="xMidYMid meet" filter="url(#keithFx0)" style="animation:moonA 6s linear infinite"><title>Keith Flint</title></image>
+      <image href="bilder/keith-2.webp" x="960" y="18" width="170" height="170" preserveAspectRatio="xMidYMid meet" filter="url(#keithFx0)" style="opacity:0; animation:moonB 6s linear infinite" aria-hidden="true"/>
 
       <!-- Skyline (defocused) -->
       <g filter="url(#dof)">
         <g fill="#1c1533" opacity="0.55"><rect x="380" y="338" width="48" height="132"/><rect x="560" y="318" width="56" height="152"/><rect x="748" y="330" width="42" height="140"/><rect x="1040" y="326" width="44" height="144"/><rect x="58" y="342" width="40" height="128"/><rect x="1140" y="300" width="60" height="170"/></g>
-        <rect x="0" y="286" width="1200" height="196" fill="url(#skyHaze)"/>
+        <rect x="-300" y="286" width="1800" height="196" fill="url(#skyHaze)"/>
         <g fill="#241a3a" opacity="0.8"><rect x="430" y="300" width="60" height="170"/><rect x="498" y="270" width="44" height="200"/><rect x="640" y="320" width="50" height="150"/><rect x="700" y="290" width="38" height="180"/><rect x="0" y="320" width="48" height="150"/><rect x="1120" y="280" width="80" height="190"/></g>
         <g fill="#ffd86b" opacity="0.3"><rect x="442" y="320" width="8" height="10"/><rect x="466" y="350" width="8" height="10"/><rect x="510" y="300" width="7" height="9"/><rect x="522" y="330" width="7" height="9"/><rect x="652" y="340" width="7" height="9"/><rect x="710" y="312" width="6" height="8"/><rect x="1140" y="300" width="7" height="9"/><rect x="1168" y="340" width="7" height="9"/><rect x="14" y="340" width="7" height="9"/></g>
       </g>
 
       <!-- Street: wet asphalt -->
-      <rect x="0" y="470" width="1200" height="130" fill="url(#street)"/>
-      <rect x="0" y="466" width="1200" height="6" fill="#4e4363" opacity="0.5"/>
-      <rect x="0" y="472" width="1200" height="10" fill="#050308" opacity="0.5"/>
+      <rect x="-600" y="470" width="2400" height="130" fill="url(#street)"/>
+      <rect x="-600" y="466" width="2400" height="6" fill="#4e4363" opacity="0.5"/>
+      <rect x="-600" y="472" width="2400" height="10" fill="#050308" opacity="0.5"/>
       <g clip-path="url(#streetClip)" style="mix-blend-mode:screen;" opacity=".55">
         <g filter="url(#reflBlur)">
           <path d="M745 474 L1055 474 L1055 560 L745 560 Z" fill="#7a3a8a"/>
@@ -155,17 +175,17 @@
         <rect x="0" y="470" width="1200" height="130" fill="url(#reflFade)" style="mix-blend-mode:multiply;" opacity="0"/>
       </g>
       <rect x="0" y="470" width="1200" height="130" fill="#0a0810" opacity=".0"/>
-      <g stroke="#8d7fae" stroke-width="3" stroke-dasharray="34 30" opacity="0.14"><line x1="0" y1="540" x2="1200" y2="540"/></g>
-      <rect x="0" y="470" width="1200" height="130" fill="#0b0814" filter="url(#wallTex)" opacity=".5" style="mix-blend-mode:multiply;"/>
+      <g stroke="#8d7fae" stroke-width="3" stroke-dasharray="34 30" opacity="0.14"><line x1="-640" y1="540" x2="1840" y2="540"/></g>
+      <rect x="-300" y="470" width="1800" height="130" fill="#0b0814" filter="url(#wallTex)" opacity=".5" style="mix-blend-mode:multiply;"/>
 
       <!-- String lights across -->
       <path d="M40 232 Q220 196 400 236" fill="none" stroke="#2a2036" stroke-width="1.6"/>
       <g>
-        <circle cx="90" cy="228" r="4.5" fill="#ffd86b" filter="url(#softGlow)" opacity=".7"/><circle cx="90" cy="228" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out infinite"/>
-        <circle cx="160" cy="214" r="4.5" fill="#00d4aa" filter="url(#softGlow)" opacity=".7"/><circle cx="160" cy="214" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .5s infinite"/>
-        <circle cx="230" cy="208" r="4.5" fill="#ff6f91" filter="url(#softGlow)" opacity=".7"/><circle cx="230" cy="208" r="2.6" fill="#ffd6e0" style="animation:twinkle 2.2s ease-in-out 1s infinite"/>
-        <circle cx="300" cy="214" r="4.5" fill="#ffd86b" filter="url(#softGlow)" opacity=".7"/><circle cx="300" cy="214" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out 1.5s infinite"/>
-        <circle cx="360" cy="228" r="4.5" fill="#00d4aa" filter="url(#softGlow)" opacity=".7"/><circle cx="360" cy="228" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .3s infinite"/>
+        <circle cx="90" cy="228" r="4.5" fill="#ffd86b" filter="url(#bulbGlow)" opacity=".7"/><circle cx="90" cy="228" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out infinite"/>
+        <circle cx="160" cy="214" r="4.5" fill="#00d4aa" filter="url(#bulbGlow)" opacity=".7"/><circle cx="160" cy="214" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .5s infinite"/>
+        <circle cx="230" cy="208" r="4.5" fill="#ff6f91" filter="url(#bulbGlow)" opacity=".7"/><circle cx="230" cy="208" r="2.6" fill="#ffd6e0" style="animation:twinkle 2.2s ease-in-out 1s infinite"/>
+        <circle cx="300" cy="214" r="4.5" fill="#ffd86b" filter="url(#bulbGlow)" opacity=".7"/><circle cx="300" cy="214" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out 1.5s infinite"/>
+        <circle cx="360" cy="228" r="4.5" fill="#00d4aa" filter="url(#bulbGlow)" opacity=".7"/><circle cx="360" cy="228" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .3s infinite"/>
       </g>
 
       <!-- ===== BAR (Café Journal) ===== -->
@@ -180,20 +200,20 @@
           <rect x="-112" y="-38" width="224" height="52" rx="4" fill="#0a0712" opacity=".7"/>
           <g stroke="#3b2b4a" stroke-width="2"><line x1="-100" y1="14" x2="-100" y2="22"/><line x1="100" y1="14" x2="100" y2="22"/><line x1="-60" y1="14" x2="-60" y2="22"/><line x1="60" y1="14" x2="60" y2="22"/></g>
           <g style="animation:neonBuzz 7s linear infinite;">
-            <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">NOCH</text>
+            <text aria-hidden="true" x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">NOCH</text>
             <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">NOCH</text>
-            <text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#ff3d78" filter="url(#neon)">{{ daysEl }}</text><text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#fff0f5">{{ daysEl2 }}</text>
-            <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">TAGE</text>
+            <text aria-hidden="true" x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#ff3d78" filter="url(#neon)">{{ daysEl }}</text><text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#fff0f5">{{ daysEl2 }}</text>
+            <text aria-hidden="true" x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">TAGE</text>
             <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">TAGE</text>
           </g>
         </g>
         <rect x="60" y="250" width="320" height="60" fill="url(#pinkSpill)" opacity=".8"/>
         <!-- sign -->
-        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive>
+        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive aria-label="Café Journal (Website)">
           <rect x="120" y="268" width="200" height="44" rx="3" fill="#0e0a18"/>
           <rect x="120" y="268" width="200" height="44" rx="3" fill="url(#glass)"/>
           <rect x="120" y="268" width="200" height="44" rx="3" fill="none" stroke="#000" stroke-opacity=".6" stroke-width="2"/>
-          <text x="220" y="298" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="22" fill="#00d4aa" filter="url(#neon)" opacity=".85" style="animation:neonBuzz 9s linear 2s infinite;">Café Journal</text>
+          <text aria-hidden="true" x="220" y="298" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="22" fill="#00d4aa" filter="url(#neon)" opacity=".85" style="animation:neonBuzz 9s linear 2s infinite;">Café Journal</text>
           <text x="220" y="298" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="22" fill="#dcfff6">Café Journal</text>
         </a>
         <!-- awning -->
@@ -216,13 +236,13 @@
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" style="animation:flicker 4s ease-in-out 1.5s infinite"/>
         <g clip-path="url(#barWindowClipR)">
           <rect x="270" y="380" width="80" height="70" fill="#3a2418"/>
-          <filter id="toneFx4" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.8896 0.2287 0.0471 0 -0.015  0.0949 0.9985 0.043 0 -0.015  0.0798 0.1825 0.8218 0 -0.015  0 0 0 1 0" result="c"/></filter><image href="bilder/marta-bar.png" x="265" y="377" width="86" height="79" preserveAspectRatio="none" filter="url(#toneFx4)"><title>Marta hinter der Bar</title></image>
+          <filter id="toneFx4" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.8896 0.2287 0.0471 0 -0.015  0.0949 0.9985 0.043 0 -0.015  0.0798 0.1825 0.8218 0 -0.015  0 0 0 1 0" result="c"/></filter><image href="bilder/marta-bar.webp" x="265" y="377" width="86" height="79" preserveAspectRatio="none" filter="url(#toneFx4)"><title>Marta hinter der Bar</title></image>
         </g>
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" opacity="0.16"/>
         <rect x="270" y="380" width="80" height="70" fill="url(#glass)"/>
         <rect x="270" y="380" width="80" height="70" fill="none" stroke="#0a0712" stroke-width="3"/>
         <!-- door (link) -->
-        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive>
+        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive aria-hidden="true" tabindex="-1">
           <rect x="188" y="386" width="64" height="84" fill="#0c0814"/>
           <rect x="192" y="390" width="56" height="80" fill="#1a1226"/>
           <rect x="196" y="394" width="48" height="52" fill="#2a1d14" opacity=".9"/>
@@ -263,9 +283,9 @@
         <rect x="800" y="240" width="200" height="66" rx="3" fill="url(#glass)"/>
         <rect x="800" y="240" width="200" height="66" rx="3" fill="none" stroke="#000" stroke-opacity=".7" stroke-width="2"/>
         <g style="animation:neonBuzz 6s linear 1s infinite;">
-          <text x="900" y="284" text-anchor="middle" font-family="'Archivo Black', sans-serif" font-size="20" fill="#ff3366" letter-spacing="1.5" filter="url(#neon)" opacity=".9">STADTHALLE</text>
+          <text aria-hidden="true" x="900" y="284" text-anchor="middle" font-family="'Archivo Black', sans-serif" font-size="20" fill="#ff3366" letter-spacing="1.5" filter="url(#neon)" opacity=".9">STADTHALLE</text>
           <text x="900" y="284" text-anchor="middle" font-family="'Archivo Black', sans-serif" font-size="20" fill="#ff6f91" letter-spacing="1.5">STADTHALLE</text>
-          <text x="900" y="301" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="9.5" fill="#ffd86b" letter-spacing="3">24 · 11 · 2026</text>
+          <text x="900" y="301" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="11" fill="#ffd86b" letter-spacing="2.5">24 · 11 · 2026</text>
         </g>
         <rect x="700" y="236" width="420" height="80" fill="url(#pinkSpill)" opacity=".7"/>
 
@@ -288,20 +308,20 @@
         <circle cx="0" cy="-22" r="110" fill="url(#flareGlow)" style="transform-box:fill-box; transform-origin:center; animation:glowPulse 1.4s ease-in-out infinite"/>
         <g style="transform-box:fill-box; transform-origin:center; transform:scaleY(0.5)">
           <g fill="#0a0612">
-            <use href="#mini-ant" transform="translate(0 -90) rotate(180)"/><use href="#mini-ant" transform="translate(34 -83) rotate(203)"/><use href="#mini-ant" transform="translate(64 -64) rotate(225)"/><use href="#mini-ant" transform="translate(83 -34) rotate(248)"/><use href="#mini-ant" transform="translate(90 0) rotate(270)"/><use href="#mini-ant" transform="translate(83 34) rotate(293)"/><use href="#mini-ant" transform="translate(64 64) rotate(315)"/><use href="#mini-ant" transform="translate(34 83) rotate(338)"/><use href="#mini-ant" transform="translate(0 90) rotate(0)"/><use href="#mini-ant" transform="translate(-34 83) rotate(23)"/><use href="#mini-ant" transform="translate(-64 64) rotate(45)"/><use href="#mini-ant" transform="translate(-83 34) rotate(68)"/><use href="#mini-ant" transform="translate(-90 0) rotate(90)"/><use href="#mini-ant" transform="translate(-83 -34) rotate(113)"/><use href="#mini-ant" transform="translate(-64 -64) rotate(135)"/><use href="#mini-ant" transform="translate(-34 -83) rotate(158)"/>
+            <path d="M0 -83L3 -78M0 -83L-3 -78M2 -89L8 -86M2 -91L9 -91M2 -93L7 -98M-2 -89L-8 -86M-2 -91L-9 -91M-2 -93L-7 -98M31.26 -76.56L32.07 -70.78M31.26 -76.56L26.55 -73.13M35.45 -81.3L39.8 -76.19M36.23 -83.14L42.68 -80.4M37.01 -84.98L43.57 -87.63M31.77 -82.86L25.07 -82.44M32.55 -84.7L26.11 -87.44M33.33 -86.54L30.68 -93.1M59.05 -59.05L57.64 -53.39M59.05 -59.05L53.39 -57.64M64.71 -61.88L66.83 -55.51M66.12 -63.29L71.07 -58.34M67.54 -64.71L74.61 -64.71M61.88 -64.71L55.51 -66.83M63.29 -66.12L58.34 -71.07M64.71 -67.54L64.71 -74.61M76.51 -31.38L73 -26.72M76.51 -31.38L70.75 -32.29M82.82 -31.77L82.29 -25.08M84.68 -32.52L87.3 -26.03M86.53 -33.27L93.04 -30.51M81.32 -35.48L76.29 -39.92M83.18 -36.23L80.56 -42.72M85.03 -36.98L87.8 -43.49M83 0L78 3M83 0L78 -3M89 2L86 8M91 2L91 9M93 2L98 7M89 -2L86 -8M91 -2L91 -9M93 -2L98 -7M76.56 31.26L70.78 32.07M76.56 31.26L73.13 26.55M81.3 35.45L76.19 39.8M83.14 36.23L80.4 42.68M84.98 37.01L87.63 43.57M82.86 31.77L82.44 25.07M84.7 32.55L87.44 26.11M86.54 33.33L93.1 30.68M59.05 59.05L53.39 57.64M59.05 59.05L57.64 53.39M61.88 64.71L55.51 66.83M63.29 66.12L58.34 71.07M64.71 67.54L64.71 74.61M64.71 61.88L66.83 55.51M66.12 63.29L71.07 58.34M67.54 64.71L74.61 64.71M31.38 76.51L26.72 73M31.38 76.51L32.29 70.75M31.77 82.82L25.08 82.29M32.52 84.68L26.03 87.3M33.27 86.53L30.51 93.04M35.48 81.32L39.92 76.29M36.23 83.18L42.72 80.56M36.98 85.03L43.49 87.8M0 83L-3 78M0 83L3 78M-2 89L-8 86M-2 91L-9 91M-2 93L-7 98M2 89L8 86M2 91L9 91M2 93L7 98M-31.26 76.56L-32.07 70.78M-31.26 76.56L-26.55 73.13M-35.45 81.3L-39.8 76.19M-36.23 83.14L-42.68 80.4M-37.01 84.98L-43.57 87.63M-31.77 82.86L-25.07 82.44M-32.55 84.7L-26.11 87.44M-33.33 86.54L-30.68 93.1M-59.05 59.05L-57.64 53.39M-59.05 59.05L-53.39 57.64M-64.71 61.88L-66.83 55.51M-66.12 63.29L-71.07 58.34M-67.54 64.71L-74.61 64.71M-61.88 64.71L-55.51 66.83M-63.29 66.12L-58.34 71.07M-64.71 67.54L-64.71 74.61M-76.51 31.38L-73 26.72M-76.51 31.38L-70.75 32.29M-82.82 31.77L-82.29 25.08M-84.68 32.52L-87.3 26.03M-86.53 33.27L-93.04 30.51M-81.32 35.48L-76.29 39.92M-83.18 36.23L-80.56 42.72M-85.03 36.98L-87.8 43.49M-83 -0L-78 -3M-83 -0L-78 3M-89 -2L-86 -8M-91 -2L-91 -9M-93 -2L-98 -7M-89 2L-86 8M-91 2L-91 9M-93 2L-98 7M-76.56 -31.26L-70.78 -32.07M-76.56 -31.26L-73.13 -26.55M-81.3 -35.45L-76.19 -39.8M-83.14 -36.23L-80.4 -42.68M-84.98 -37.01L-87.63 -43.57M-82.86 -31.77L-82.44 -25.07M-84.7 -32.55L-87.44 -26.11M-86.54 -33.33L-93.1 -30.68M-59.05 -59.05L-53.39 -57.64M-59.05 -59.05L-57.64 -53.39M-61.88 -64.71L-55.51 -66.83M-63.29 -66.12L-58.34 -71.07M-64.71 -67.54L-64.71 -74.61M-64.71 -61.88L-66.83 -55.51M-66.12 -63.29L-71.07 -58.34M-67.54 -64.71L-74.61 -64.71M-31.38 -76.51L-26.72 -73M-31.38 -76.51L-32.29 -70.75M-31.77 -82.82L-25.08 -82.29M-32.52 -84.68L-26.03 -87.3M-33.27 -86.53L-30.51 -93.04M-35.48 -81.32L-39.92 -76.29M-36.23 -83.18L-42.72 -80.56M-36.98 -85.03L-43.49 -87.8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M-2.4 -84A2.4 2 180 1 0 2.4 -84A2.4 2 180 1 0 -2.4 -84ZM-2 -90A2 2.4 180 1 0 2 -90A2 2.4 180 1 0 -2 -90ZM-3.2 -97A3.2 4.2 180 1 0 3.2 -97A3.2 4.2 180 1 0 -3.2 -97ZM29.45 -78.41A2.4 2 203 1 0 33.86 -76.54A2.4 2 203 1 0 29.45 -78.41ZM32.16 -83.78A2 2.4 203 1 0 35.84 -82.22A2 2.4 203 1 0 32.16 -83.78ZM33.79 -90.69A3.2 4.2 203 1 0 39.68 -88.19A3.2 4.2 203 1 0 33.79 -90.69ZM58.06 -61.45A2.4 2 225 1 0 61.45 -58.06A2.4 2 225 1 0 58.06 -61.45ZM62.59 -65.41A2 2.4 225 1 0 65.41 -62.59A2 2.4 225 1 0 62.59 -65.41ZM66.69 -71.21A3.2 4.2 225 1 0 71.21 -66.69A3.2 4.2 225 1 0 66.69 -71.21ZM76.54 -33.98A2.4 2 248 1 0 78.34 -29.53A2.4 2 248 1 0 76.54 -33.98ZM82.25 -35.85A2 2.4 248 1 0 83.75 -32.15A2 2.4 248 1 0 82.25 -35.85ZM88.29 -39.59A3.2 4.2 248 1 0 90.69 -33.66A3.2 4.2 248 1 0 88.29 -39.59ZM84 -2.4A2.4 2 270 1 0 84 2.4A2.4 2 270 1 0 84 -2.4ZM90 -2A2 2.4 270 1 0 90 2A2 2.4 270 1 0 90 -2ZM97 -3.2A3.2 4.2 270 1 0 97 3.2A3.2 4.2 270 1 0 97 -3.2ZM78.41 29.45A2.4 2 293 1 0 76.54 33.86A2.4 2 293 1 0 78.41 29.45ZM83.78 32.16A2 2.4 293 1 0 82.22 35.84A2 2.4 293 1 0 83.78 32.16ZM90.69 33.79A3.2 4.2 293 1 0 88.19 39.68A3.2 4.2 293 1 0 90.69 33.79ZM61.45 58.06A2.4 2 315 1 0 58.06 61.45A2.4 2 315 1 0 61.45 58.06ZM65.41 62.59A2 2.4 315 1 0 62.59 65.41A2 2.4 315 1 0 65.41 62.59ZM71.21 66.69A3.2 4.2 315 1 0 66.69 71.21A3.2 4.2 315 1 0 71.21 66.69ZM33.98 76.54A2.4 2 338 1 0 29.53 78.34A2.4 2 338 1 0 33.98 76.54ZM35.85 82.25A2 2.4 338 1 0 32.15 83.75A2 2.4 338 1 0 35.85 82.25ZM39.59 88.29A3.2 4.2 338 1 0 33.66 90.69A3.2 4.2 338 1 0 39.59 88.29ZM2.4 84A2.4 2 0 1 0 -2.4 84A2.4 2 0 1 0 2.4 84ZM2 90A2 2.4 0 1 0 -2 90A2 2.4 0 1 0 2 90ZM3.2 97A3.2 4.2 0 1 0 -3.2 97A3.2 4.2 0 1 0 3.2 97ZM-29.45 78.41A2.4 2 23 1 0 -33.86 76.54A2.4 2 23 1 0 -29.45 78.41ZM-32.16 83.78A2 2.4 23 1 0 -35.84 82.22A2 2.4 23 1 0 -32.16 83.78ZM-33.79 90.69A3.2 4.2 23 1 0 -39.68 88.19A3.2 4.2 23 1 0 -33.79 90.69ZM-58.06 61.45A2.4 2 45 1 0 -61.45 58.06A2.4 2 45 1 0 -58.06 61.45ZM-62.59 65.41A2 2.4 45 1 0 -65.41 62.59A2 2.4 45 1 0 -62.59 65.41ZM-66.69 71.21A3.2 4.2 45 1 0 -71.21 66.69A3.2 4.2 45 1 0 -66.69 71.21ZM-76.54 33.98A2.4 2 68 1 0 -78.34 29.53A2.4 2 68 1 0 -76.54 33.98ZM-82.25 35.85A2 2.4 68 1 0 -83.75 32.15A2 2.4 68 1 0 -82.25 35.85ZM-88.29 39.59A3.2 4.2 68 1 0 -90.69 33.66A3.2 4.2 68 1 0 -88.29 39.59ZM-84 2.4A2.4 2 90 1 0 -84 -2.4A2.4 2 90 1 0 -84 2.4ZM-90 2A2 2.4 90 1 0 -90 -2A2 2.4 90 1 0 -90 2ZM-97 3.2A3.2 4.2 90 1 0 -97 -3.2A3.2 4.2 90 1 0 -97 3.2ZM-78.41 -29.45A2.4 2 113 1 0 -76.54 -33.86A2.4 2 113 1 0 -78.41 -29.45ZM-83.78 -32.16A2 2.4 113 1 0 -82.22 -35.84A2 2.4 113 1 0 -83.78 -32.16ZM-90.69 -33.79A3.2 4.2 113 1 0 -88.19 -39.68A3.2 4.2 113 1 0 -90.69 -33.79ZM-61.45 -58.06A2.4 2 135 1 0 -58.06 -61.45A2.4 2 135 1 0 -61.45 -58.06ZM-65.41 -62.59A2 2.4 135 1 0 -62.59 -65.41A2 2.4 135 1 0 -65.41 -62.59ZM-71.21 -66.69A3.2 4.2 135 1 0 -66.69 -71.21A3.2 4.2 135 1 0 -71.21 -66.69ZM-33.98 -76.54A2.4 2 158 1 0 -29.53 -78.34A2.4 2 158 1 0 -33.98 -76.54ZM-35.85 -82.25A2 2.4 158 1 0 -32.15 -83.75A2 2.4 158 1 0 -35.85 -82.25ZM-39.59 -88.29A3.2 4.2 158 1 0 -33.66 -90.69A3.2 4.2 158 1 0 -39.59 -88.29Z" fill="#111"/>
           </g>
           <g fill="#0c0820" style="transform-box:fill-box; transform-origin:center; animation:spin 8.5s linear infinite">
-            <use href="#mini-ant" transform="translate(0 -68) rotate(90)"/><use href="#mini-ant" transform="translate(26 -63) rotate(112)"/><use href="#mini-ant" transform="translate(48 -48) rotate(135)"/><use href="#mini-ant" transform="translate(63 -26) rotate(158)"/><use href="#mini-ant" transform="translate(68 0) rotate(180)"/><use href="#mini-ant" transform="translate(63 26) rotate(203)"/><use href="#mini-ant" transform="translate(48 48) rotate(225)"/><use href="#mini-ant" transform="translate(26 63) rotate(248)"/><use href="#mini-ant" transform="translate(0 68) rotate(270)"/><use href="#mini-ant" transform="translate(-26 63) rotate(293)"/><use href="#mini-ant" transform="translate(-48 48) rotate(315)"/><use href="#mini-ant" transform="translate(-63 26) rotate(338)"/><use href="#mini-ant" transform="translate(-68 0) rotate(0)"/><use href="#mini-ant" transform="translate(-63 -26) rotate(23)"/><use href="#mini-ant" transform="translate(-48 -48) rotate(45)"/><use href="#mini-ant" transform="translate(-26 -63) rotate(68)"/>
+            <path d="M7 -68L12 -71M7 -68L12 -65M1 -70L4 -76M-1 -70L-1 -77M-3 -70L-8 -75M1 -66L4 -60M-1 -66L-1 -59M-3 -66L-8 -61M32.49 -60.38L38.25 -61.29M32.49 -60.38L36 -55.72M27.68 -64.48L32.71 -68.92M25.82 -65.23L28.44 -71.72M23.97 -65.98L21.2 -72.49M26.18 -60.77L26.71 -54.08M24.32 -61.52L21.7 -55.03M22.47 -62.27L15.96 -59.51M52.95 -43.05L58.61 -41.64M52.95 -43.05L54.36 -37.39M50.12 -48.71L56.49 -50.83M48.71 -50.12L53.66 -55.07M47.29 -51.54L47.29 -58.61M47.29 -45.88L45.17 -39.51M45.88 -47.29L40.93 -42.34M44.46 -48.71L37.39 -48.71M65.62 -19.51L70.28 -16M65.62 -19.51L64.71 -13.75M65.23 -25.82L71.92 -25.29M64.48 -27.68L70.97 -30.3M63.73 -29.53L66.49 -36.04M61.52 -24.32L57.08 -19.29M60.77 -26.18L54.28 -23.56M60.02 -28.03L53.51 -30.8M68 7L71 12M68 7L65 12M70 1L76 4M70 -1L77 -1M70 -3L75 -8M66 1L60 4M66 -1L59 -1M66 -3L61 -8M60.26 32.44L61.07 38.22M60.26 32.44L55.55 35.87M64.45 27.7L68.8 32.81M65.23 25.86L71.68 28.6M66.01 24.02L72.57 21.37M60.77 26.14L54.07 26.56M61.55 24.3L55.11 21.56M62.33 22.46L59.68 15.9M43.05 52.95L41.64 58.61M43.05 52.95L37.39 54.36M48.71 50.12L50.83 56.49M50.12 48.71L55.07 53.66M51.54 47.29L58.61 47.29M45.88 47.29L39.51 45.17M47.29 45.88L42.34 40.93M48.71 44.46L48.71 37.39M19.51 65.62L16 70.28M19.51 65.62L13.75 64.71M25.82 65.23L25.29 71.92M27.68 64.48L30.3 70.97M29.53 63.73L36.04 66.49M24.32 61.52L19.29 57.08M26.18 60.77L23.56 54.28M28.03 60.02L30.8 53.51M-7 68L-12 71M-7 68L-12 65M-1 70L-4 76M1 70L1 77M3 70L8 75M-1 66L-4 60M1 66L1 59M3 66L8 61M-32.44 60.26L-38.22 61.07M-32.44 60.26L-35.87 55.55M-27.7 64.45L-32.81 68.8M-25.86 65.23L-28.6 71.68M-24.02 66.01L-21.37 72.57M-26.14 60.77L-26.56 54.07M-24.3 61.55L-21.56 55.11M-22.46 62.33L-15.9 59.68M-52.95 43.05L-58.61 41.64M-52.95 43.05L-54.36 37.39M-50.12 48.71L-56.49 50.83M-48.71 50.12L-53.66 55.07M-47.29 51.54L-47.29 58.61M-47.29 45.88L-45.17 39.51M-45.88 47.29L-40.93 42.34M-44.46 48.71L-37.39 48.71M-65.62 19.51L-70.28 16M-65.62 19.51L-64.71 13.75M-65.23 25.82L-71.92 25.29M-64.48 27.68L-70.97 30.3M-63.73 29.53L-66.49 36.04M-61.52 24.32L-57.08 19.29M-60.77 26.18L-54.28 23.56M-60.02 28.03L-53.51 30.8M-68 -7L-71 -12M-68 -7L-65 -12M-70 -1L-76 -4M-70 1L-77 1M-70 3L-75 8M-66 -1L-60 -4M-66 1L-59 1M-66 3L-61 8M-60.26 -32.44L-61.07 -38.22M-60.26 -32.44L-55.55 -35.87M-64.45 -27.7L-68.8 -32.81M-65.23 -25.86L-71.68 -28.6M-66.01 -24.02L-72.57 -21.37M-60.77 -26.14L-54.07 -26.56M-61.55 -24.3L-55.11 -21.56M-62.33 -22.46L-59.68 -15.9M-43.05 -52.95L-41.64 -58.61M-43.05 -52.95L-37.39 -54.36M-48.71 -50.12L-50.83 -56.49M-50.12 -48.71L-55.07 -53.66M-51.54 -47.29L-58.61 -47.29M-45.88 -47.29L-39.51 -45.17M-47.29 -45.88L-42.34 -40.93M-48.71 -44.46L-48.71 -37.39M-19.51 -65.62L-16 -70.28M-19.51 -65.62L-13.75 -64.71M-25.82 -65.23L-25.29 -71.92M-27.68 -64.48L-30.3 -70.97M-29.53 -63.73L-36.04 -66.49M-24.32 -61.52L-19.29 -57.08M-26.18 -60.77L-23.56 -54.28M-28.03 -60.02L-30.8 -53.51" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M6 -65.6A2.4 2 90 1 0 6 -70.4A2.4 2 90 1 0 6 -65.6ZM0 -66A2 2.4 90 1 0 -0 -70A2 2.4 90 1 0 0 -66ZM-7 -64.8A3.2 4.2 90 1 0 -7 -71.2A3.2 4.2 90 1 0 -7 -64.8ZM30.66 -58.53A2.4 2 112 1 0 32.46 -62.98A2.4 2 112 1 0 30.66 -58.53ZM25.25 -61.15A2 2.4 112 1 0 26.75 -64.85A2 2.4 112 1 0 25.25 -61.15ZM18.31 -62.66A3.2 4.2 112 1 0 20.71 -68.59A3.2 4.2 112 1 0 18.31 -62.66ZM50.55 -42.06A2.4 2 135 1 0 53.94 -45.45A2.4 2 135 1 0 50.55 -42.06ZM46.59 -46.59A2 2.4 135 1 0 49.41 -49.41A2 2.4 135 1 0 46.59 -46.59ZM40.79 -50.69A3.2 4.2 135 1 0 45.31 -55.21A3.2 4.2 135 1 0 40.79 -50.69ZM63.02 -19.54A2.4 2 158 1 0 67.47 -21.34A2.4 2 158 1 0 63.02 -19.54ZM61.15 -25.25A2 2.4 158 1 0 64.85 -26.75A2 2.4 158 1 0 61.15 -25.25ZM57.41 -31.29A3.2 4.2 158 1 0 63.34 -33.69A3.2 4.2 158 1 0 57.41 -31.29ZM65.6 6A2.4 2 180 1 0 70.4 6A2.4 2 180 1 0 65.6 6ZM66 0A2 2.4 180 1 0 70 -0A2 2.4 180 1 0 66 0ZM64.8 -7A3.2 4.2 180 1 0 71.2 -7A3.2 4.2 180 1 0 64.8 -7ZM58.45 30.59A2.4 2 203 1 0 62.86 32.46A2.4 2 203 1 0 58.45 30.59ZM61.16 25.22A2 2.4 203 1 0 64.84 26.78A2 2.4 203 1 0 61.16 25.22ZM62.79 18.31A3.2 4.2 203 1 0 68.68 20.81A3.2 4.2 203 1 0 62.79 18.31ZM42.06 50.55A2.4 2 225 1 0 45.45 53.94A2.4 2 225 1 0 42.06 50.55ZM46.59 46.59A2 2.4 225 1 0 49.41 49.41A2 2.4 225 1 0 46.59 46.59ZM50.69 40.79A3.2 4.2 225 1 0 55.21 45.31A3.2 4.2 225 1 0 50.69 40.79ZM19.54 63.02A2.4 2 248 1 0 21.34 67.47A2.4 2 248 1 0 19.54 63.02ZM25.25 61.15A2 2.4 248 1 0 26.75 64.85A2 2.4 248 1 0 25.25 61.15ZM31.29 57.41A3.2 4.2 248 1 0 33.69 63.34A3.2 4.2 248 1 0 31.29 57.41ZM-6 65.6A2.4 2 270 1 0 -6 70.4A2.4 2 270 1 0 -6 65.6ZM-0 66A2 2.4 270 1 0 0 70A2 2.4 270 1 0 -0 66ZM7 64.8A3.2 4.2 270 1 0 7 71.2A3.2 4.2 270 1 0 7 64.8ZM-30.59 58.45A2.4 2 293 1 0 -32.46 62.86A2.4 2 293 1 0 -30.59 58.45ZM-25.22 61.16A2 2.4 293 1 0 -26.78 64.84A2 2.4 293 1 0 -25.22 61.16ZM-18.31 62.79A3.2 4.2 293 1 0 -20.81 68.68A3.2 4.2 293 1 0 -18.31 62.79ZM-50.55 42.06A2.4 2 315 1 0 -53.94 45.45A2.4 2 315 1 0 -50.55 42.06ZM-46.59 46.59A2 2.4 315 1 0 -49.41 49.41A2 2.4 315 1 0 -46.59 46.59ZM-40.79 50.69A3.2 4.2 315 1 0 -45.31 55.21A3.2 4.2 315 1 0 -40.79 50.69ZM-63.02 19.54A2.4 2 338 1 0 -67.47 21.34A2.4 2 338 1 0 -63.02 19.54ZM-61.15 25.25A2 2.4 338 1 0 -64.85 26.75A2 2.4 338 1 0 -61.15 25.25ZM-57.41 31.29A3.2 4.2 338 1 0 -63.34 33.69A3.2 4.2 338 1 0 -57.41 31.29ZM-65.6 -6A2.4 2 0 1 0 -70.4 -6A2.4 2 0 1 0 -65.6 -6ZM-66 0A2 2.4 0 1 0 -70 0A2 2.4 0 1 0 -66 0ZM-64.8 7A3.2 4.2 0 1 0 -71.2 7A3.2 4.2 0 1 0 -64.8 7ZM-58.45 -30.59A2.4 2 23 1 0 -62.86 -32.46A2.4 2 23 1 0 -58.45 -30.59ZM-61.16 -25.22A2 2.4 23 1 0 -64.84 -26.78A2 2.4 23 1 0 -61.16 -25.22ZM-62.79 -18.31A3.2 4.2 23 1 0 -68.68 -20.81A3.2 4.2 23 1 0 -62.79 -18.31ZM-42.06 -50.55A2.4 2 45 1 0 -45.45 -53.94A2.4 2 45 1 0 -42.06 -50.55ZM-46.59 -46.59A2 2.4 45 1 0 -49.41 -49.41A2 2.4 45 1 0 -46.59 -46.59ZM-50.69 -40.79A3.2 4.2 45 1 0 -55.21 -45.31A3.2 4.2 45 1 0 -50.69 -40.79ZM-19.54 -63.02A2.4 2 68 1 0 -21.34 -67.47A2.4 2 68 1 0 -19.54 -63.02ZM-25.25 -61.15A2 2.4 68 1 0 -26.75 -64.85A2 2.4 68 1 0 -25.25 -61.15ZM-31.29 -57.41A3.2 4.2 68 1 0 -33.69 -63.34A3.2 4.2 68 1 0 -31.29 -57.41Z" fill="#111"/>
           </g>
           <g fill="#100a28" style="transform-box:fill-box; transform-origin:center; animation:spin 5.5s linear infinite">
-            <use href="#mini-ant" transform="translate(0 -48) rotate(90)"/><use href="#mini-ant" transform="translate(24 -42) rotate(120)"/><use href="#mini-ant" transform="translate(42 -24) rotate(150)"/><use href="#mini-ant" transform="translate(48 0) rotate(180)"/><use href="#mini-ant" transform="translate(42 24) rotate(210)"/><use href="#mini-ant" transform="translate(24 42) rotate(240)"/><use href="#mini-ant" transform="translate(0 48) rotate(270)"/><use href="#mini-ant" transform="translate(-24 42) rotate(300)"/><use href="#mini-ant" transform="translate(-42 24) rotate(330)"/><use href="#mini-ant" transform="translate(-48 0) rotate(0)"/><use href="#mini-ant" transform="translate(-42 -24) rotate(30)"/><use href="#mini-ant" transform="translate(-24 -42) rotate(60)"/>
+            <path d="M7 -48L12 -51M7 -48L12 -45M1 -50L4 -56M-1 -50L-1 -57M-3 -50L-8 -55M1 -46L4 -40M-1 -46L-1 -39M-3 -46L-8 -41M30.06 -38.5L35.89 -38.6M30.06 -38.5L32.89 -33.4M25.87 -43.23L31.46 -46.93M24.13 -44.23L27.63 -50.29M22.4 -45.23L20.57 -52.06M23.87 -39.77L23.46 -33.07M22.13 -40.77L18.63 -34.71M20.4 -41.77L13.57 -39.94M45.5 -17.94L50.6 -15.11M45.5 -17.94L45.4 -12.11M44.23 -24.13L50.93 -24.54M43.23 -25.87L49.29 -29.37M42.23 -27.6L44.06 -34.43M40.77 -22.13L37.07 -16.54M39.77 -23.87L33.71 -20.37M38.77 -25.6L31.94 -27.43M48 7L51 12M48 7L45 12M50 1L56 4M50 -1L57 -1M50 -3L55 -8M46 1L40 4M46 -1L39 -1M46 -3L41 -8M38.5 30.06L38.6 35.89M38.5 30.06L33.4 32.89M43.23 25.87L46.93 31.46M44.23 24.13L50.29 27.63M45.23 22.4L52.06 20.57M39.77 23.87L33.07 23.46M40.77 22.13L34.71 18.63M41.77 20.4L39.94 13.57M17.94 45.5L15.11 50.6M17.94 45.5L12.11 45.4M24.13 44.23L24.54 50.93M25.87 43.23L29.37 49.29M27.6 42.23L34.43 44.06M22.13 40.77L16.54 37.07M23.87 39.77L20.37 33.71M25.6 38.77L27.43 31.94M-7 48L-12 51M-7 48L-12 45M-1 50L-4 56M1 50L1 57M3 50L8 55M-1 46L-4 40M1 46L1 39M3 46L8 41M-30.06 38.5L-35.89 38.6M-30.06 38.5L-32.89 33.4M-25.87 43.23L-31.46 46.93M-24.13 44.23L-27.63 50.29M-22.4 45.23L-20.57 52.06M-23.87 39.77L-23.46 33.07M-22.13 40.77L-18.63 34.71M-20.4 41.77L-13.57 39.94M-45.5 17.94L-50.6 15.11M-45.5 17.94L-45.4 12.11M-44.23 24.13L-50.93 24.54M-43.23 25.87L-49.29 29.37M-42.23 27.6L-44.06 34.43M-40.77 22.13L-37.07 16.54M-39.77 23.87L-33.71 20.37M-38.77 25.6L-31.94 27.43M-48 -7L-51 -12M-48 -7L-45 -12M-50 -1L-56 -4M-50 1L-57 1M-50 3L-55 8M-46 -1L-40 -4M-46 1L-39 1M-46 3L-41 8M-38.5 -30.06L-38.6 -35.89M-38.5 -30.06L-33.4 -32.89M-43.23 -25.87L-46.93 -31.46M-44.23 -24.13L-50.29 -27.63M-45.23 -22.4L-52.06 -20.57M-39.77 -23.87L-33.07 -23.46M-40.77 -22.13L-34.71 -18.63M-41.77 -20.4L-39.94 -13.57M-17.94 -45.5L-15.11 -50.6M-17.94 -45.5L-12.11 -45.4M-24.13 -44.23L-24.54 -50.93M-25.87 -43.23L-29.37 -49.29M-27.6 -42.23L-34.43 -44.06M-22.13 -40.77L-16.54 -37.07M-23.87 -39.77L-20.37 -33.71M-25.6 -38.77L-27.43 -31.94" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M6 -45.6A2.4 2 90 1 0 6 -50.4A2.4 2 90 1 0 6 -45.6ZM0 -46A2 2.4 90 1 0 -0 -50A2 2.4 90 1 0 0 -46ZM-7 -44.8A3.2 4.2 90 1 0 -7 -51.2A3.2 4.2 90 1 0 -7 -44.8ZM28 -36.92A2.4 2 120 1 0 30.4 -41.08A2.4 2 120 1 0 28 -36.92ZM23 -40.27A2 2.4 120 1 0 25 -43.73A2 2.4 120 1 0 23 -40.27ZM16.34 -42.73A3.2 4.2 120 1 0 19.54 -48.27A3.2 4.2 120 1 0 16.34 -42.73ZM42.92 -17.6A2.4 2 150 1 0 47.08 -20A2.4 2 150 1 0 42.92 -17.6ZM40.27 -23A2 2.4 150 1 0 43.73 -25A2 2.4 150 1 0 40.27 -23ZM35.73 -28.46A3.2 4.2 150 1 0 41.27 -31.66A3.2 4.2 150 1 0 35.73 -28.46ZM45.6 6A2.4 2 180 1 0 50.4 6A2.4 2 180 1 0 45.6 6ZM46 0A2 2.4 180 1 0 50 -0A2 2.4 180 1 0 46 0ZM44.8 -7A3.2 4.2 180 1 0 51.2 -7A3.2 4.2 180 1 0 44.8 -7ZM36.92 28A2.4 2 210 1 0 41.08 30.4A2.4 2 210 1 0 36.92 28ZM40.27 23A2 2.4 210 1 0 43.73 25A2 2.4 210 1 0 40.27 23ZM42.73 16.34A3.2 4.2 210 1 0 48.27 19.54A3.2 4.2 210 1 0 42.73 16.34ZM17.6 42.92A2.4 2 240 1 0 20 47.08A2.4 2 240 1 0 17.6 42.92ZM23 40.27A2 2.4 240 1 0 25 43.73A2 2.4 240 1 0 23 40.27ZM28.46 35.73A3.2 4.2 240 1 0 31.66 41.27A3.2 4.2 240 1 0 28.46 35.73ZM-6 45.6A2.4 2 270 1 0 -6 50.4A2.4 2 270 1 0 -6 45.6ZM-0 46A2 2.4 270 1 0 0 50A2 2.4 270 1 0 -0 46ZM7 44.8A3.2 4.2 270 1 0 7 51.2A3.2 4.2 270 1 0 7 44.8ZM-28 36.92A2.4 2 300 1 0 -30.4 41.08A2.4 2 300 1 0 -28 36.92ZM-23 40.27A2 2.4 300 1 0 -25 43.73A2 2.4 300 1 0 -23 40.27ZM-16.34 42.73A3.2 4.2 300 1 0 -19.54 48.27A3.2 4.2 300 1 0 -16.34 42.73ZM-42.92 17.6A2.4 2 330 1 0 -47.08 20A2.4 2 330 1 0 -42.92 17.6ZM-40.27 23A2 2.4 330 1 0 -43.73 25A2 2.4 330 1 0 -40.27 23ZM-35.73 28.46A3.2 4.2 330 1 0 -41.27 31.66A3.2 4.2 330 1 0 -35.73 28.46ZM-45.6 -6A2.4 2 0 1 0 -50.4 -6A2.4 2 0 1 0 -45.6 -6ZM-46 0A2 2.4 0 1 0 -50 0A2 2.4 0 1 0 -46 0ZM-44.8 7A3.2 4.2 0 1 0 -51.2 7A3.2 4.2 0 1 0 -44.8 7ZM-36.92 -28A2.4 2 30 1 0 -41.08 -30.4A2.4 2 30 1 0 -36.92 -28ZM-40.27 -23A2 2.4 30 1 0 -43.73 -25A2 2.4 30 1 0 -40.27 -23ZM-42.73 -16.34A3.2 4.2 30 1 0 -48.27 -19.54A3.2 4.2 30 1 0 -42.73 -16.34ZM-17.6 -42.92A2.4 2 60 1 0 -20 -47.08A2.4 2 60 1 0 -17.6 -42.92ZM-23 -40.27A2 2.4 60 1 0 -25 -43.73A2 2.4 60 1 0 -23 -40.27ZM-28.46 -35.73A3.2 4.2 60 1 0 -31.66 -41.27A3.2 4.2 60 1 0 -28.46 -35.73Z" fill="#111"/>
           </g>
           <g fill="#140c2a" style="transform-box:fill-box; transform-origin:center; animation:spin 3.2s linear infinite">
-            <use href="#mini-ant" transform="translate(0 -28) rotate(90)"/><use href="#mini-ant" transform="translate(20 -20) rotate(135)"/><use href="#mini-ant" transform="translate(28 0) rotate(180)"/><use href="#mini-ant" transform="translate(20 20) rotate(225)"/><use href="#mini-ant" transform="translate(0 28) rotate(270)"/><use href="#mini-ant" transform="translate(-20 20) rotate(315)"/><use href="#mini-ant" transform="translate(-28 0) rotate(0)"/><use href="#mini-ant" transform="translate(-20 -20) rotate(45)"/>
+            <path d="M7 -28L12 -31M7 -28L12 -25M1 -30L4 -36M-1 -30L-1 -37M-3 -30L-8 -35M1 -26L4 -20M-1 -26L-1 -19M-3 -26L-8 -21M24.95 -15.05L30.61 -13.64M24.95 -15.05L26.36 -9.39M22.12 -20.71L28.49 -22.83M20.71 -22.12L25.66 -27.07M19.29 -23.54L19.29 -30.61M19.29 -17.88L17.17 -11.51M17.88 -19.29L12.93 -14.34M16.46 -20.71L9.39 -20.71M28 7L31 12M28 7L25 12M30 1L36 4M30 -1L37 -1M30 -3L35 -8M26 1L20 4M26 -1L19 -1M26 -3L21 -8M15.05 24.95L13.64 30.61M15.05 24.95L9.39 26.36M20.71 22.12L22.83 28.49M22.12 20.71L27.07 25.66M23.54 19.29L30.61 19.29M17.88 19.29L11.51 17.17M19.29 17.88L14.34 12.93M20.71 16.46L20.71 9.39M-7 28L-12 31M-7 28L-12 25M-1 30L-4 36M1 30L1 37M3 30L8 35M-1 26L-4 20M1 26L1 19M3 26L8 21M-24.95 15.05L-30.61 13.64M-24.95 15.05L-26.36 9.39M-22.12 20.71L-28.49 22.83M-20.71 22.12L-25.66 27.07M-19.29 23.54L-19.29 30.61M-19.29 17.88L-17.17 11.51M-17.88 19.29L-12.93 14.34M-16.46 20.71L-9.39 20.71M-28 -7L-31 -12M-28 -7L-25 -12M-30 -1L-36 -4M-30 1L-37 1M-30 3L-35 8M-26 -1L-20 -4M-26 1L-19 1M-26 3L-21 8M-15.05 -24.95L-13.64 -30.61M-15.05 -24.95L-9.39 -26.36M-20.71 -22.12L-22.83 -28.49M-22.12 -20.71L-27.07 -25.66M-23.54 -19.29L-30.61 -19.29M-17.88 -19.29L-11.51 -17.17M-19.29 -17.88L-14.34 -12.93M-20.71 -16.46L-20.71 -9.39" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M6 -25.6A2.4 2 90 1 0 6 -30.4A2.4 2 90 1 0 6 -25.6ZM0 -26A2 2.4 90 1 0 -0 -30A2 2.4 90 1 0 0 -26ZM-7 -24.8A3.2 4.2 90 1 0 -7 -31.2A3.2 4.2 90 1 0 -7 -24.8ZM22.55 -14.06A2.4 2 135 1 0 25.94 -17.45A2.4 2 135 1 0 22.55 -14.06ZM18.59 -18.59A2 2.4 135 1 0 21.41 -21.41A2 2.4 135 1 0 18.59 -18.59ZM12.79 -22.69A3.2 4.2 135 1 0 17.31 -27.21A3.2 4.2 135 1 0 12.79 -22.69ZM25.6 6A2.4 2 180 1 0 30.4 6A2.4 2 180 1 0 25.6 6ZM26 0A2 2.4 180 1 0 30 -0A2 2.4 180 1 0 26 0ZM24.8 -7A3.2 4.2 180 1 0 31.2 -7A3.2 4.2 180 1 0 24.8 -7ZM14.06 22.55A2.4 2 225 1 0 17.45 25.94A2.4 2 225 1 0 14.06 22.55ZM18.59 18.59A2 2.4 225 1 0 21.41 21.41A2 2.4 225 1 0 18.59 18.59ZM22.69 12.79A3.2 4.2 225 1 0 27.21 17.31A3.2 4.2 225 1 0 22.69 12.79ZM-6 25.6A2.4 2 270 1 0 -6 30.4A2.4 2 270 1 0 -6 25.6ZM-0 26A2 2.4 270 1 0 0 30A2 2.4 270 1 0 -0 26ZM7 24.8A3.2 4.2 270 1 0 7 31.2A3.2 4.2 270 1 0 7 24.8ZM-22.55 14.06A2.4 2 315 1 0 -25.94 17.45A2.4 2 315 1 0 -22.55 14.06ZM-18.59 18.59A2 2.4 315 1 0 -21.41 21.41A2 2.4 315 1 0 -18.59 18.59ZM-12.79 22.69A3.2 4.2 315 1 0 -17.31 27.21A3.2 4.2 315 1 0 -12.79 22.69ZM-25.6 -6A2.4 2 0 1 0 -30.4 -6A2.4 2 0 1 0 -25.6 -6ZM-26 0A2 2.4 0 1 0 -30 0A2 2.4 0 1 0 -26 0ZM-24.8 7A3.2 4.2 0 1 0 -31.2 7A3.2 4.2 0 1 0 -24.8 7ZM-14.06 -22.55A2.4 2 45 1 0 -17.45 -25.94A2.4 2 45 1 0 -14.06 -22.55ZM-18.59 -18.59A2 2.4 45 1 0 -21.41 -21.41A2 2.4 45 1 0 -18.59 -18.59ZM-22.69 -12.79A3.2 4.2 45 1 0 -27.21 -17.31A3.2 4.2 45 1 0 -22.69 -12.79Z" fill="#111"/>
           </g>
         </g>
         <g style="transform-box:fill-box; transform-origin:center bottom; animation:pitCenterSway 1.9s ease-in-out infinite">
-          <use href="#mini-ant" transform="scale(1)"/>
+          <g transform="scale(1)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
           <g transform="translate(11 -8) rotate(12)">
             <rect x="-2" y="-18" width="4" height="32" rx="2" fill="#6b4423"/><ellipse cx="0" cy="-18" rx="6" ry="2.6" fill="#2b2438"/><ellipse cx="0" cy="-19" rx="5" ry="2.4" fill="#ff7a3c"/>
             <g transform="translate(0 -20)">
@@ -311,17 +331,17 @@
             </g>
           </g>
         </g>
-        <use href="#mini-ant" transform="translate(108 -32) rotate(220)"/><use href="#mini-ant" transform="translate(-100 -38) rotate(50)"/><use href="#mini-ant" transform="translate(52 108) rotate(305)"/>
+        <g transform="translate(108 -32) rotate(220)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g><g transform="translate(-100 -38) rotate(50)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g><g transform="translate(52 108) rotate(305)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
       </g>
 
       <!-- Lorenz pops out of the 48er bin -->
       <g>
         <defs><clipPath id="clipPop"><ellipse cx="575" cy="234" rx="41" ry="20"/><rect x="420" y="0" width="320" height="234"/></clipPath></defs>
         <ellipse cx="577" cy="506" rx="70" ry="10" fill="#000" opacity=".4"/>
-        <filter id="shadowFx20" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.6965 0.0541 0.0054 0 -0.025  0.0161 0.7345 0.0054 0 -0.025  0.0161 0.0541 0.6858 0 -0.025  0 0 0 1 0" result="c"/><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/bin.png" x="472" y="154" width="210" height="352" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx20)"></image>
+        <filter id="shadowFx20" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.6965 0.0541 0.0054 0 -0.025  0.0161 0.7345 0.0054 0 -0.025  0.0161 0.0541 0.6858 0 -0.025  0 0 0 1 0" result="c"/><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/bin.webp" x="472" y="154" width="210" height="352" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx20)"></image>
         <g clip-path="url(#clipPop)">
           <g class="pop-face" style="animation:popOut 6s ease-in-out infinite; transform:translateY(150px);">
-            <filter id="shadowFx22" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/face.png" x="528" y="127" width="95" height="117" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx22)"><title>Lorenz</title></image>
+            <filter id="shadowFx22" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/face.webp" x="528" y="127" width="95" height="117" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx22)"><title>Lorenz</title></image>
             <circle cx="564.5" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out infinite;"/>
             <circle cx="587" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out .12s infinite;"/>
           </g>
@@ -329,11 +349,11 @@
       </g>
       <!-- Marching ants: bar → hall -->
       <g class="marchers">
-        <use href="#mini-ant" transform="rotate(90)" style="animation:march 14s linear infinite"/>
-        <use href="#mini-ant" style="animation:march 14s linear 2.6s infinite"/>
-        <use href="#mini-ant" style="animation:march 14s linear 5.2s infinite"/>
-        <use href="#mini-ant" style="animation:march 14s linear 7.8s infinite"/>
-        <use href="#mini-ant" style="animation:march 14s linear 10.4s infinite"/>
+        <g transform="rotate(90)" style="animation:march 14s linear infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:march 14s linear -11.4s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:march 14s linear -8.8s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:march 14s linear -6.2s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:march 14s linear -3.6s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
       </g>
 
       <!-- Taxi: drives up to Café Journal, passengers go inside, taxi drives off -->
@@ -359,21 +379,21 @@
           <g style="transform:translateX(1400px); animation:taxiDrive 16s linear both;">
             <ellipse cx="222" cy="546" rx="104" ry="7" fill="#000" opacity=".5"/>
             <path d="M126 520 L-10 504 L-10 548 L126 536 Z" fill="url(#taxiBeam)" style="opacity:0; animation:taxiLights 16s linear both;"/>
-            <filter id="taxiFx24" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.7281 0.0444 0.0045 0 -0.025  0.0132 0.7593 0.0045 0 -0.025  0.0132 0.0444 0.7193 0 -0.025  0 0 0 1 0" result="c"/></filter><image href="bilder/taxi.png" x="120" y="472" width="200" height="75.5" filter="url(#taxiFx24)"/>
+            <filter id="taxiFx24" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.7281 0.0444 0.0045 0 -0.025  0.0132 0.7593 0.0045 0 -0.025  0.0132 0.0444 0.7193 0 -0.025  0 0 0 1 0" result="c"/></filter><image href="bilder/taxi.webp" x="120" y="472" width="200" height="75.5" filter="url(#taxiFx24)"/>
           </g>
         </g>
       </sc-if>
 
       <!-- Film grain + vignette -->
-      <rect x="0" y="0" width="1200" height="600" fill="#000" filter="url(#grain)" opacity=".16" style="mix-blend-mode:overlay; pointer-events:none;"/>
-      <rect x="0" y="0" width="1200" height="600" fill="url(#vignette)" style="pointer-events:none;"/>
+      <rect x="-300" y="-300" width="1800" height="900" fill="#000" filter="url(#grain)" opacity=".16" style="mix-blend-mode:overlay; pointer-events:none;"/>
+      <rect x="-600" y="-600" width="2400" height="1200" fill="url(#vignette)" style="pointer-events:none;"/>
 
       <!-- Hover zones -->
       <rect x="40" y="186" width="362" height="288" fill="#00000000" data-interactive onMouseEnter="{{ enterBar }}" onMouseLeave="{{ leaveBar }}" onClick="{{ clickBar }}"/>
       <rect x="696" y="230" width="428" height="244" fill="#00000000" data-interactive onMouseEnter="{{ enterConcert }}" onMouseLeave="{{ leaveConcert }}" onClick="{{ clickConcert }}"/>
       <!-- link objects stay clickable above the zones -->
-      <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive><rect x="120" y="268" width="200" height="44" fill="#00000000"/><rect x="188" y="386" width="64" height="84" fill="#00000000"/></a>
-      <a href="https://www.stadthalle.com/de/shopf/index.php?shopid=9&gotoperformance=72254&language=1" target="_blank" rel="noopener" data-interactive><rect x="800" y="240" width="200" height="66" fill="#00000000"/></a>
+      <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive aria-hidden="true" tabindex="-1"><rect x="120" y="268" width="200" height="44" fill="#00000000"/><rect x="188" y="386" width="64" height="84" fill="#00000000"/></a>
+      <a href="https://www.stadthalle.com/de/shopf/index.php?shopid=9&gotoperformance=72254&language=1" target="_blank" rel="noopener" data-interactive aria-label="Stadthalle – Tickets für The Prodigy"><rect x="800" y="240" width="200" height="66" fill="#00000000"/></a>
     </svg>
   </div>
 
@@ -391,7 +411,7 @@
 
   <!-- Stop 1: Bar -->
   <section class="m-scene">
-    <svg viewBox="20 170 400 380" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:560px; margin:0 auto; display:block; -webkit-mask-image:linear-gradient(180deg,#000 82%,transparent); mask-image:linear-gradient(180deg,#000 82%,transparent);" role="img" aria-label="Café Journal Bar" onClick="{{ playBarTap }}">
+    <svg viewBox="20 170 400 410" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:600px; margin:0 auto; display:block; -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 5%,#000 92%,transparent); mask-image:linear-gradient(180deg,transparent 0,#000 5%,#000 92%,transparent);" role="group" aria-label="Café Journal Bar" onClick="{{ playBarTap }}">
       <defs>
         <linearGradient id="street" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2b2538"/><stop offset="18%" stop-color="#1b1626"/><stop offset="100%" stop-color="#0a0810"/></linearGradient>
         <pattern id="brick" width="26" height="12" patternUnits="userSpaceOnUse"><rect width="26" height="12" fill="#3a2b44"/><rect x=".6" y=".6" width="11.8" height="4.8" rx=".6" fill="#4d3a58"/><rect x="13.6" y=".6" width="11.8" height="4.8" rx=".6" fill="#47355a"/><rect x="7.1" y="6.6" width="11.8" height="4.8" rx=".6" fill="#4a3856"/><rect x="-5.9" y="6.6" width="11.8" height="4.8" rx=".6" fill="#513c5c"/><rect x="20.1" y="6.6" width="11.8" height="4.8" rx=".6" fill="#513c5c"/></pattern>
@@ -403,7 +423,7 @@
         <radialGradient id="warmSpill" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffcf7a" stop-opacity=".16"/><stop offset="100%" stop-color="#ffcf7a" stop-opacity="0"/></radialGradient>
         <radialGradient id="pinkSpill" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ff3366" stop-opacity=".3"/><stop offset="100%" stop-color="#ff3366" stop-opacity="0"/></radialGradient>
         <linearGradient id="taxiBeam" x1="1" y1="0" x2="0" y2="0"><stop offset="0%" stop-color="#ffe6b0" stop-opacity=".9"/><stop offset="100%" stop-color="#ffe6b0" stop-opacity="0"/></linearGradient>
-        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4"/></filter><filter id="bulbGlow" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="4"/></filter>
         <filter id="reflBlur" x="-10%" y="-10%" width="120%" height="140%"><feGaussianBlur stdDeviation="5"/></filter>
         <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="7"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".9" intercept="-.32"/></feComponentTransfer></filter>
         <filter id="wallTex" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".05" numOctaves="3" seed="4"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".5" intercept="-.2"/></feComponentTransfer></filter>
@@ -412,16 +432,16 @@
         <clipPath id="barWindowClipR"><rect x="270" y="380" width="80" height="70"/></clipPath>
         <clipPath id="streetClipM"><rect x="20" y="470" width="400" height="30"/></clipPath>
       </defs>
-      <rect x="20" y="470" width="400" height="80" fill="url(#street)"/>
+      <rect x="20" y="470" width="400" height="110" fill="url(#street)"/>
       <rect x="20" y="466" width="400" height="6" fill="#4e4363" opacity="0.5"/>
       <rect x="20" y="472" width="400" height="10" fill="#050308" opacity="0.5"/>
       <path d="M40 232 Q220 196 400 236" fill="none" stroke="#2a2036" stroke-width="1.6"/>
       <g>
-        <circle cx="90" cy="228" r="4.5" fill="#ffd86b" filter="url(#softGlow)" opacity=".7"/><circle cx="90" cy="228" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out infinite"/>
-        <circle cx="160" cy="214" r="4.5" fill="#00d4aa" filter="url(#softGlow)" opacity=".7"/><circle cx="160" cy="214" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .5s infinite"/>
-        <circle cx="230" cy="208" r="4.5" fill="#ff6f91" filter="url(#softGlow)" opacity=".7"/><circle cx="230" cy="208" r="2.6" fill="#ffd6e0" style="animation:twinkle 2.2s ease-in-out 1s infinite"/>
-        <circle cx="300" cy="214" r="4.5" fill="#ffd86b" filter="url(#softGlow)" opacity=".7"/><circle cx="300" cy="214" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out 1.5s infinite"/>
-        <circle cx="360" cy="228" r="4.5" fill="#00d4aa" filter="url(#softGlow)" opacity=".7"/><circle cx="360" cy="228" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .3s infinite"/>
+        <circle cx="90" cy="228" r="4.5" fill="#ffd86b" filter="url(#bulbGlow)" opacity=".7"/><circle cx="90" cy="228" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out infinite"/>
+        <circle cx="160" cy="214" r="4.5" fill="#00d4aa" filter="url(#bulbGlow)" opacity=".7"/><circle cx="160" cy="214" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .5s infinite"/>
+        <circle cx="230" cy="208" r="4.5" fill="#ff6f91" filter="url(#bulbGlow)" opacity=".7"/><circle cx="230" cy="208" r="2.6" fill="#ffd6e0" style="animation:twinkle 2.2s ease-in-out 1s infinite"/>
+        <circle cx="300" cy="214" r="4.5" fill="#ffd86b" filter="url(#bulbGlow)" opacity=".7"/><circle cx="300" cy="214" r="2.6" fill="#fff2c4" style="animation:twinkle 2.2s ease-in-out 1.5s infinite"/>
+        <circle cx="360" cy="228" r="4.5" fill="#00d4aa" filter="url(#bulbGlow)" opacity=".7"/><circle cx="360" cy="228" r="2.6" fill="#c9fff2" style="animation:twinkle 2.2s ease-in-out .3s infinite"/>
       </g>
       <g>
         <rect x="60" y="250" width="320" height="220" fill="url(#brick)"/>
@@ -433,19 +453,19 @@
           <rect x="-112" y="-38" width="224" height="52" rx="4" fill="#0a0712" opacity=".7"/>
           <g stroke="#3b2b4a" stroke-width="2"><line x1="-100" y1="14" x2="-100" y2="22"/><line x1="100" y1="14" x2="100" y2="22"/><line x1="-60" y1="14" x2="-60" y2="22"/><line x1="60" y1="14" x2="60" y2="22"/></g>
           <g style="animation:neonBuzz 7s linear infinite;">
-            <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">NOCH</text>
+            <text aria-hidden="true" x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">NOCH</text>
             <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">NOCH</text>
-            <text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#ff3d78" filter="url(#neon)">{{ daysEl }}</text><text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#fff0f5">{{ daysEl2 }}</text>
-            <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">TAGE</text>
+            <text aria-hidden="true" x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#ff3d78" filter="url(#neon)">{{ daysEl }}</text><text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#fff0f5">{{ daysEl2 }}</text>
+            <text aria-hidden="true" x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">TAGE</text>
             <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">TAGE</text>
           </g>
         </g>
         <rect x="60" y="250" width="320" height="60" fill="url(#pinkSpill)" opacity=".8"/>
-        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive>
+        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive aria-label="Café Journal (Website)">
           <rect x="120" y="268" width="200" height="44" rx="3" fill="#0e0a18"/>
           <rect x="120" y="268" width="200" height="44" rx="3" fill="url(#glass)"/>
           <rect x="120" y="268" width="200" height="44" rx="3" fill="none" stroke="#000" stroke-opacity=".6" stroke-width="2"/>
-          <text x="220" y="298" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="22" fill="#00d4aa" filter="url(#neon)" opacity=".85" style="animation:neonBuzz 9s linear 2s infinite;">Café Journal</text>
+          <text aria-hidden="true" x="220" y="298" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="22" fill="#00d4aa" filter="url(#neon)" opacity=".85" style="animation:neonBuzz 9s linear 2s infinite;">Café Journal</text>
           <text x="220" y="298" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="22" fill="#dcfff6">Café Journal</text>
         </a>
         <path d="M60 322 L380 322 L392 360 L48 360 Z" fill="#000" opacity=".35" filter="url(#softGlow)"/>
@@ -466,12 +486,12 @@
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" style="animation:flicker 4s ease-in-out 1.5s infinite"/>
         <g clip-path="url(#barWindowClipR)">
           <rect x="270" y="380" width="80" height="70" fill="#3a2418"/>
-          <filter id="toneFx5" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.8896 0.2287 0.0471 0 -0.015  0.0949 0.9985 0.043 0 -0.015  0.0798 0.1825 0.8218 0 -0.015  0 0 0 1 0" result="c"/></filter><image href="bilder/marta-bar.png" x="265" y="377" width="86" height="79" preserveAspectRatio="none" filter="url(#toneFx5)"><title>Marta hinter der Bar</title></image>
+          <filter id="toneFx5" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.8896 0.2287 0.0471 0 -0.015  0.0949 0.9985 0.043 0 -0.015  0.0798 0.1825 0.8218 0 -0.015  0 0 0 1 0" result="c"/></filter><image href="bilder/marta-bar.webp" x="265" y="377" width="86" height="79" preserveAspectRatio="none" filter="url(#toneFx5)"><title>Marta hinter der Bar</title></image>
         </g>
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" opacity="0.16"/>
         <rect x="270" y="380" width="80" height="70" fill="url(#glass)"/>
         <rect x="270" y="380" width="80" height="70" fill="none" stroke="#0a0712" stroke-width="3"/>
-        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive>
+        <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive aria-hidden="true" tabindex="-1">
           <rect x="188" y="386" width="64" height="84" fill="#0c0814"/>
           <rect x="192" y="390" width="56" height="80" fill="#1a1226"/>
           <rect x="196" y="394" width="48" height="52" fill="#2a1d14" opacity=".9"/>
@@ -507,27 +527,27 @@
           <g style="transform:translateX(1400px); animation:taxiDrive 16s linear both;">
             <ellipse cx="222" cy="546" rx="104" ry="7" fill="#000" opacity=".5"/>
             <path d="M126 520 L-10 504 L-10 548 L126 536 Z" fill="url(#taxiBeam)" style="opacity:0; animation:taxiLights 16s linear both;"/>
-            <filter id="taxiFx25" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.7281 0.0444 0.0045 0 -0.025  0.0132 0.7593 0.0045 0 -0.025  0.0132 0.0444 0.7193 0 -0.025  0 0 0 1 0" result="c"/></filter><image href="bilder/taxi.png" x="120" y="472" width="200" height="75.5" filter="url(#taxiFx25)"/>
+            <filter id="taxiFx25" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.7281 0.0444 0.0045 0 -0.025  0.0132 0.7593 0.0045 0 -0.025  0.0132 0.0444 0.7193 0 -0.025  0 0 0 1 0" result="c"/></filter><image href="bilder/taxi.webp" x="120" y="472" width="200" height="75.5" filter="url(#taxiFx25)"/>
           </g>
         </g>
       </sc-if>
 
-      <rect x="20" y="170" width="400" height="380" fill="#000" filter="url(#grain)" opacity=".16" style="mix-blend-mode:overlay; pointer-events:none;"/>
-      <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive><rect x="120" y="268" width="200" height="44" fill="#00000000"/><rect x="188" y="386" width="64" height="84" fill="#00000000"/></a>
+      <rect x="20" y="170" width="400" height="410" fill="#000" filter="url(#grain)" opacity=".16" style="mix-blend-mode:overlay; pointer-events:none;"/>
+      <a href="https://dasjournal.at/" target="_blank" rel="noopener" data-interactive aria-hidden="true" tabindex="-1"><rect x="120" y="268" width="200" height="44" fill="#00000000"/><rect x="188" y="386" width="64" height="84" fill="#00000000"/></a>
     </svg>
   </section>
 
   <!-- Lorenz -->
-  <section style="display:flex; justify-content:center; padding:10px 0 10px;">
+  <section class="m-lorenz" style="display:flex; justify-content:center; padding:10px 0 10px;">
     <svg viewBox="450 100 260 420" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:min(300px,70vw); display:block;" role="img" aria-label="Lorenz">
       <!-- Lorenz pops out of the 48er bin -->
       <g>
         <defs><clipPath id="clipPopM"><ellipse cx="575" cy="234" rx="41" ry="20"/><rect x="420" y="0" width="320" height="234"/></clipPath></defs>
         <ellipse cx="577" cy="506" rx="70" ry="10" fill="#000" opacity=".4"/>
-        <filter id="shadowFx21" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.6965 0.0541 0.0054 0 -0.025  0.0161 0.7345 0.0054 0 -0.025  0.0161 0.0541 0.6858 0 -0.025  0 0 0 1 0" result="c"/><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/bin.png" x="472" y="154" width="210" height="352" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx21)"></image>
+        <filter id="shadowFx21" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.6965 0.0541 0.0054 0 -0.025  0.0161 0.7345 0.0054 0 -0.025  0.0161 0.0541 0.6858 0 -0.025  0 0 0 1 0" result="c"/><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/bin.webp" x="472" y="154" width="210" height="352" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx21)"></image>
         <g clip-path="url(#clipPopM)">
           <g class="pop-face" style="animation:popOut 6s ease-in-out infinite; transform:translateY(150px);">
-            <filter id="shadowFx23" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/face.png" x="528" y="127" width="95" height="117" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx23)"><title>Lorenz</title></image>
+            <filter id="shadowFx23" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/face.webp" x="528" y="127" width="95" height="117" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx23)"><title>Lorenz</title></image>
             <circle cx="564.5" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out infinite;"/>
             <circle cx="587" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out .12s infinite;"/>
           </g>
@@ -537,8 +557,8 @@
   </section>
 
   <!-- Stop 2: Stadthalle -->
-  <section class="m-scene">
-    <svg viewBox="690 200 440 380" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:600px; margin:0 auto; display:block; -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 8%,#000 86%,transparent); mask-image:linear-gradient(180deg,transparent 0%,#000 8%,#000 86%,transparent);" role="img" aria-label="The Prodigy in der Stadthalle" onClick="{{ playConcertTap }}">
+  <section class="m-scene m-hall">
+    <svg viewBox="690 200 440 380" xmlns="http://www.w3.org/2000/svg" style="width:100%; max-width:600px; margin:0 auto; display:block; -webkit-mask-image:linear-gradient(180deg,transparent 0%,#000 8%,#000 86%,transparent); mask-image:linear-gradient(180deg,transparent 0%,#000 8%,#000 86%,transparent);" role="group" aria-label="The Prodigy in der Stadthalle" onClick="{{ playConcertTap }}">
       <defs>
         <linearGradient id="streetM2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2b2538"/><stop offset="18%" stop-color="#1b1626"/><stop offset="100%" stop-color="#0a0810"/></linearGradient>
         <linearGradient id="beamM" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00d4aa" stop-opacity="0.55"/><stop offset="100%" stop-color="#00d4aa" stop-opacity="0"/></linearGradient>
@@ -598,9 +618,9 @@
         <rect x="800" y="240" width="200" height="66" rx="3" fill="url(#glassM)"/>
         <rect x="800" y="240" width="200" height="66" rx="3" fill="none" stroke="#000" stroke-opacity=".7" stroke-width="2"/>
         <g style="animation:neonBuzz 6s linear 1s infinite;">
-          <text x="900" y="284" text-anchor="middle" font-family="'Archivo Black', sans-serif" font-size="20" fill="#ff3366" letter-spacing="1.5" filter="url(#neonM)" opacity=".9">STADTHALLE</text>
-          <text x="900" y="284" text-anchor="middle" font-family="'Archivo Black', sans-serif" font-size="20" fill="#ff6f91" letter-spacing="1.5">STADTHALLE</text>
-          <text x="900" y="301" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="9.5" fill="#ffd86b" letter-spacing="3">24 · 11 · 2026</text>
+          <text aria-hidden="true" x="900" y="280" text-anchor="middle" font-family="'Archivo Black', sans-serif" font-size="20" fill="#ff3366" letter-spacing="1.5" filter="url(#neonM)" opacity=".9">STADTHALLE</text>
+          <text x="900" y="280" text-anchor="middle" font-family="'Archivo Black', sans-serif" font-size="20" fill="#ff6f91" letter-spacing="1.5">STADTHALLE</text>
+          <text x="900" y="300" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="13" fill="#ffd86b" letter-spacing="2">24 · 11 · 2026</text>
         </g>
         <rect x="700" y="236" width="420" height="80" fill="url(#pinkSpillM)" opacity=".7"/>
 
@@ -619,20 +639,20 @@
         <circle cx="0" cy="-22" r="110" fill="url(#flareGlowM)" style="transform-box:fill-box; transform-origin:center; animation:glowPulse 1.4s ease-in-out infinite"/>
         <g style="transform-box:fill-box; transform-origin:center; transform:scaleY(0.5)">
           <g fill="#0a0612">
-            <use href="#mini-ant-m" transform="translate(0 -90) rotate(180)"/><use href="#mini-ant-m" transform="translate(34 -83) rotate(203)"/><use href="#mini-ant-m" transform="translate(64 -64) rotate(225)"/><use href="#mini-ant-m" transform="translate(83 -34) rotate(248)"/><use href="#mini-ant-m" transform="translate(90 0) rotate(270)"/><use href="#mini-ant-m" transform="translate(83 34) rotate(293)"/><use href="#mini-ant-m" transform="translate(64 64) rotate(315)"/><use href="#mini-ant-m" transform="translate(34 83) rotate(338)"/><use href="#mini-ant-m" transform="translate(0 90) rotate(0)"/><use href="#mini-ant-m" transform="translate(-34 83) rotate(23)"/><use href="#mini-ant-m" transform="translate(-64 64) rotate(45)"/><use href="#mini-ant-m" transform="translate(-83 34) rotate(68)"/><use href="#mini-ant-m" transform="translate(-90 0) rotate(90)"/><use href="#mini-ant-m" transform="translate(-83 -34) rotate(113)"/><use href="#mini-ant-m" transform="translate(-64 -64) rotate(135)"/><use href="#mini-ant-m" transform="translate(-34 -83) rotate(158)"/>
+            <path d="M0 -83L3 -78M0 -83L-3 -78M2 -89L8 -86M2 -91L9 -91M2 -93L7 -98M-2 -89L-8 -86M-2 -91L-9 -91M-2 -93L-7 -98M31.26 -76.56L32.07 -70.78M31.26 -76.56L26.55 -73.13M35.45 -81.3L39.8 -76.19M36.23 -83.14L42.68 -80.4M37.01 -84.98L43.57 -87.63M31.77 -82.86L25.07 -82.44M32.55 -84.7L26.11 -87.44M33.33 -86.54L30.68 -93.1M59.05 -59.05L57.64 -53.39M59.05 -59.05L53.39 -57.64M64.71 -61.88L66.83 -55.51M66.12 -63.29L71.07 -58.34M67.54 -64.71L74.61 -64.71M61.88 -64.71L55.51 -66.83M63.29 -66.12L58.34 -71.07M64.71 -67.54L64.71 -74.61M76.51 -31.38L73 -26.72M76.51 -31.38L70.75 -32.29M82.82 -31.77L82.29 -25.08M84.68 -32.52L87.3 -26.03M86.53 -33.27L93.04 -30.51M81.32 -35.48L76.29 -39.92M83.18 -36.23L80.56 -42.72M85.03 -36.98L87.8 -43.49M83 0L78 3M83 0L78 -3M89 2L86 8M91 2L91 9M93 2L98 7M89 -2L86 -8M91 -2L91 -9M93 -2L98 -7M76.56 31.26L70.78 32.07M76.56 31.26L73.13 26.55M81.3 35.45L76.19 39.8M83.14 36.23L80.4 42.68M84.98 37.01L87.63 43.57M82.86 31.77L82.44 25.07M84.7 32.55L87.44 26.11M86.54 33.33L93.1 30.68M59.05 59.05L53.39 57.64M59.05 59.05L57.64 53.39M61.88 64.71L55.51 66.83M63.29 66.12L58.34 71.07M64.71 67.54L64.71 74.61M64.71 61.88L66.83 55.51M66.12 63.29L71.07 58.34M67.54 64.71L74.61 64.71M31.38 76.51L26.72 73M31.38 76.51L32.29 70.75M31.77 82.82L25.08 82.29M32.52 84.68L26.03 87.3M33.27 86.53L30.51 93.04M35.48 81.32L39.92 76.29M36.23 83.18L42.72 80.56M36.98 85.03L43.49 87.8M0 83L-3 78M0 83L3 78M-2 89L-8 86M-2 91L-9 91M-2 93L-7 98M2 89L8 86M2 91L9 91M2 93L7 98M-31.26 76.56L-32.07 70.78M-31.26 76.56L-26.55 73.13M-35.45 81.3L-39.8 76.19M-36.23 83.14L-42.68 80.4M-37.01 84.98L-43.57 87.63M-31.77 82.86L-25.07 82.44M-32.55 84.7L-26.11 87.44M-33.33 86.54L-30.68 93.1M-59.05 59.05L-57.64 53.39M-59.05 59.05L-53.39 57.64M-64.71 61.88L-66.83 55.51M-66.12 63.29L-71.07 58.34M-67.54 64.71L-74.61 64.71M-61.88 64.71L-55.51 66.83M-63.29 66.12L-58.34 71.07M-64.71 67.54L-64.71 74.61M-76.51 31.38L-73 26.72M-76.51 31.38L-70.75 32.29M-82.82 31.77L-82.29 25.08M-84.68 32.52L-87.3 26.03M-86.53 33.27L-93.04 30.51M-81.32 35.48L-76.29 39.92M-83.18 36.23L-80.56 42.72M-85.03 36.98L-87.8 43.49M-83 -0L-78 -3M-83 -0L-78 3M-89 -2L-86 -8M-91 -2L-91 -9M-93 -2L-98 -7M-89 2L-86 8M-91 2L-91 9M-93 2L-98 7M-76.56 -31.26L-70.78 -32.07M-76.56 -31.26L-73.13 -26.55M-81.3 -35.45L-76.19 -39.8M-83.14 -36.23L-80.4 -42.68M-84.98 -37.01L-87.63 -43.57M-82.86 -31.77L-82.44 -25.07M-84.7 -32.55L-87.44 -26.11M-86.54 -33.33L-93.1 -30.68M-59.05 -59.05L-53.39 -57.64M-59.05 -59.05L-57.64 -53.39M-61.88 -64.71L-55.51 -66.83M-63.29 -66.12L-58.34 -71.07M-64.71 -67.54L-64.71 -74.61M-64.71 -61.88L-66.83 -55.51M-66.12 -63.29L-71.07 -58.34M-67.54 -64.71L-74.61 -64.71M-31.38 -76.51L-26.72 -73M-31.38 -76.51L-32.29 -70.75M-31.77 -82.82L-25.08 -82.29M-32.52 -84.68L-26.03 -87.3M-33.27 -86.53L-30.51 -93.04M-35.48 -81.32L-39.92 -76.29M-36.23 -83.18L-42.72 -80.56M-36.98 -85.03L-43.49 -87.8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M-2.4 -84A2.4 2 180 1 0 2.4 -84A2.4 2 180 1 0 -2.4 -84ZM-2 -90A2 2.4 180 1 0 2 -90A2 2.4 180 1 0 -2 -90ZM-3.2 -97A3.2 4.2 180 1 0 3.2 -97A3.2 4.2 180 1 0 -3.2 -97ZM29.45 -78.41A2.4 2 203 1 0 33.86 -76.54A2.4 2 203 1 0 29.45 -78.41ZM32.16 -83.78A2 2.4 203 1 0 35.84 -82.22A2 2.4 203 1 0 32.16 -83.78ZM33.79 -90.69A3.2 4.2 203 1 0 39.68 -88.19A3.2 4.2 203 1 0 33.79 -90.69ZM58.06 -61.45A2.4 2 225 1 0 61.45 -58.06A2.4 2 225 1 0 58.06 -61.45ZM62.59 -65.41A2 2.4 225 1 0 65.41 -62.59A2 2.4 225 1 0 62.59 -65.41ZM66.69 -71.21A3.2 4.2 225 1 0 71.21 -66.69A3.2 4.2 225 1 0 66.69 -71.21ZM76.54 -33.98A2.4 2 248 1 0 78.34 -29.53A2.4 2 248 1 0 76.54 -33.98ZM82.25 -35.85A2 2.4 248 1 0 83.75 -32.15A2 2.4 248 1 0 82.25 -35.85ZM88.29 -39.59A3.2 4.2 248 1 0 90.69 -33.66A3.2 4.2 248 1 0 88.29 -39.59ZM84 -2.4A2.4 2 270 1 0 84 2.4A2.4 2 270 1 0 84 -2.4ZM90 -2A2 2.4 270 1 0 90 2A2 2.4 270 1 0 90 -2ZM97 -3.2A3.2 4.2 270 1 0 97 3.2A3.2 4.2 270 1 0 97 -3.2ZM78.41 29.45A2.4 2 293 1 0 76.54 33.86A2.4 2 293 1 0 78.41 29.45ZM83.78 32.16A2 2.4 293 1 0 82.22 35.84A2 2.4 293 1 0 83.78 32.16ZM90.69 33.79A3.2 4.2 293 1 0 88.19 39.68A3.2 4.2 293 1 0 90.69 33.79ZM61.45 58.06A2.4 2 315 1 0 58.06 61.45A2.4 2 315 1 0 61.45 58.06ZM65.41 62.59A2 2.4 315 1 0 62.59 65.41A2 2.4 315 1 0 65.41 62.59ZM71.21 66.69A3.2 4.2 315 1 0 66.69 71.21A3.2 4.2 315 1 0 71.21 66.69ZM33.98 76.54A2.4 2 338 1 0 29.53 78.34A2.4 2 338 1 0 33.98 76.54ZM35.85 82.25A2 2.4 338 1 0 32.15 83.75A2 2.4 338 1 0 35.85 82.25ZM39.59 88.29A3.2 4.2 338 1 0 33.66 90.69A3.2 4.2 338 1 0 39.59 88.29ZM2.4 84A2.4 2 0 1 0 -2.4 84A2.4 2 0 1 0 2.4 84ZM2 90A2 2.4 0 1 0 -2 90A2 2.4 0 1 0 2 90ZM3.2 97A3.2 4.2 0 1 0 -3.2 97A3.2 4.2 0 1 0 3.2 97ZM-29.45 78.41A2.4 2 23 1 0 -33.86 76.54A2.4 2 23 1 0 -29.45 78.41ZM-32.16 83.78A2 2.4 23 1 0 -35.84 82.22A2 2.4 23 1 0 -32.16 83.78ZM-33.79 90.69A3.2 4.2 23 1 0 -39.68 88.19A3.2 4.2 23 1 0 -33.79 90.69ZM-58.06 61.45A2.4 2 45 1 0 -61.45 58.06A2.4 2 45 1 0 -58.06 61.45ZM-62.59 65.41A2 2.4 45 1 0 -65.41 62.59A2 2.4 45 1 0 -62.59 65.41ZM-66.69 71.21A3.2 4.2 45 1 0 -71.21 66.69A3.2 4.2 45 1 0 -66.69 71.21ZM-76.54 33.98A2.4 2 68 1 0 -78.34 29.53A2.4 2 68 1 0 -76.54 33.98ZM-82.25 35.85A2 2.4 68 1 0 -83.75 32.15A2 2.4 68 1 0 -82.25 35.85ZM-88.29 39.59A3.2 4.2 68 1 0 -90.69 33.66A3.2 4.2 68 1 0 -88.29 39.59ZM-84 2.4A2.4 2 90 1 0 -84 -2.4A2.4 2 90 1 0 -84 2.4ZM-90 2A2 2.4 90 1 0 -90 -2A2 2.4 90 1 0 -90 2ZM-97 3.2A3.2 4.2 90 1 0 -97 -3.2A3.2 4.2 90 1 0 -97 3.2ZM-78.41 -29.45A2.4 2 113 1 0 -76.54 -33.86A2.4 2 113 1 0 -78.41 -29.45ZM-83.78 -32.16A2 2.4 113 1 0 -82.22 -35.84A2 2.4 113 1 0 -83.78 -32.16ZM-90.69 -33.79A3.2 4.2 113 1 0 -88.19 -39.68A3.2 4.2 113 1 0 -90.69 -33.79ZM-61.45 -58.06A2.4 2 135 1 0 -58.06 -61.45A2.4 2 135 1 0 -61.45 -58.06ZM-65.41 -62.59A2 2.4 135 1 0 -62.59 -65.41A2 2.4 135 1 0 -65.41 -62.59ZM-71.21 -66.69A3.2 4.2 135 1 0 -66.69 -71.21A3.2 4.2 135 1 0 -71.21 -66.69ZM-33.98 -76.54A2.4 2 158 1 0 -29.53 -78.34A2.4 2 158 1 0 -33.98 -76.54ZM-35.85 -82.25A2 2.4 158 1 0 -32.15 -83.75A2 2.4 158 1 0 -35.85 -82.25ZM-39.59 -88.29A3.2 4.2 158 1 0 -33.66 -90.69A3.2 4.2 158 1 0 -39.59 -88.29Z" fill="#111"/>
           </g>
           <g fill="#0c0820" style="transform-box:fill-box; transform-origin:center; animation:spin 8.5s linear infinite">
-            <use href="#mini-ant-m" transform="translate(0 -68) rotate(90)"/><use href="#mini-ant-m" transform="translate(26 -63) rotate(112)"/><use href="#mini-ant-m" transform="translate(48 -48) rotate(135)"/><use href="#mini-ant-m" transform="translate(63 -26) rotate(158)"/><use href="#mini-ant-m" transform="translate(68 0) rotate(180)"/><use href="#mini-ant-m" transform="translate(63 26) rotate(203)"/><use href="#mini-ant-m" transform="translate(48 48) rotate(225)"/><use href="#mini-ant-m" transform="translate(26 63) rotate(248)"/><use href="#mini-ant-m" transform="translate(0 68) rotate(270)"/><use href="#mini-ant-m" transform="translate(-26 63) rotate(293)"/><use href="#mini-ant-m" transform="translate(-48 48) rotate(315)"/><use href="#mini-ant-m" transform="translate(-63 26) rotate(338)"/><use href="#mini-ant-m" transform="translate(-68 0) rotate(0)"/><use href="#mini-ant-m" transform="translate(-63 -26) rotate(23)"/><use href="#mini-ant-m" transform="translate(-48 -48) rotate(45)"/><use href="#mini-ant-m" transform="translate(-26 -63) rotate(68)"/>
+            <path d="M7 -68L12 -71M7 -68L12 -65M1 -70L4 -76M-1 -70L-1 -77M-3 -70L-8 -75M1 -66L4 -60M-1 -66L-1 -59M-3 -66L-8 -61M32.49 -60.38L38.25 -61.29M32.49 -60.38L36 -55.72M27.68 -64.48L32.71 -68.92M25.82 -65.23L28.44 -71.72M23.97 -65.98L21.2 -72.49M26.18 -60.77L26.71 -54.08M24.32 -61.52L21.7 -55.03M22.47 -62.27L15.96 -59.51M52.95 -43.05L58.61 -41.64M52.95 -43.05L54.36 -37.39M50.12 -48.71L56.49 -50.83M48.71 -50.12L53.66 -55.07M47.29 -51.54L47.29 -58.61M47.29 -45.88L45.17 -39.51M45.88 -47.29L40.93 -42.34M44.46 -48.71L37.39 -48.71M65.62 -19.51L70.28 -16M65.62 -19.51L64.71 -13.75M65.23 -25.82L71.92 -25.29M64.48 -27.68L70.97 -30.3M63.73 -29.53L66.49 -36.04M61.52 -24.32L57.08 -19.29M60.77 -26.18L54.28 -23.56M60.02 -28.03L53.51 -30.8M68 7L71 12M68 7L65 12M70 1L76 4M70 -1L77 -1M70 -3L75 -8M66 1L60 4M66 -1L59 -1M66 -3L61 -8M60.26 32.44L61.07 38.22M60.26 32.44L55.55 35.87M64.45 27.7L68.8 32.81M65.23 25.86L71.68 28.6M66.01 24.02L72.57 21.37M60.77 26.14L54.07 26.56M61.55 24.3L55.11 21.56M62.33 22.46L59.68 15.9M43.05 52.95L41.64 58.61M43.05 52.95L37.39 54.36M48.71 50.12L50.83 56.49M50.12 48.71L55.07 53.66M51.54 47.29L58.61 47.29M45.88 47.29L39.51 45.17M47.29 45.88L42.34 40.93M48.71 44.46L48.71 37.39M19.51 65.62L16 70.28M19.51 65.62L13.75 64.71M25.82 65.23L25.29 71.92M27.68 64.48L30.3 70.97M29.53 63.73L36.04 66.49M24.32 61.52L19.29 57.08M26.18 60.77L23.56 54.28M28.03 60.02L30.8 53.51M-7 68L-12 71M-7 68L-12 65M-1 70L-4 76M1 70L1 77M3 70L8 75M-1 66L-4 60M1 66L1 59M3 66L8 61M-32.44 60.26L-38.22 61.07M-32.44 60.26L-35.87 55.55M-27.7 64.45L-32.81 68.8M-25.86 65.23L-28.6 71.68M-24.02 66.01L-21.37 72.57M-26.14 60.77L-26.56 54.07M-24.3 61.55L-21.56 55.11M-22.46 62.33L-15.9 59.68M-52.95 43.05L-58.61 41.64M-52.95 43.05L-54.36 37.39M-50.12 48.71L-56.49 50.83M-48.71 50.12L-53.66 55.07M-47.29 51.54L-47.29 58.61M-47.29 45.88L-45.17 39.51M-45.88 47.29L-40.93 42.34M-44.46 48.71L-37.39 48.71M-65.62 19.51L-70.28 16M-65.62 19.51L-64.71 13.75M-65.23 25.82L-71.92 25.29M-64.48 27.68L-70.97 30.3M-63.73 29.53L-66.49 36.04M-61.52 24.32L-57.08 19.29M-60.77 26.18L-54.28 23.56M-60.02 28.03L-53.51 30.8M-68 -7L-71 -12M-68 -7L-65 -12M-70 -1L-76 -4M-70 1L-77 1M-70 3L-75 8M-66 -1L-60 -4M-66 1L-59 1M-66 3L-61 8M-60.26 -32.44L-61.07 -38.22M-60.26 -32.44L-55.55 -35.87M-64.45 -27.7L-68.8 -32.81M-65.23 -25.86L-71.68 -28.6M-66.01 -24.02L-72.57 -21.37M-60.77 -26.14L-54.07 -26.56M-61.55 -24.3L-55.11 -21.56M-62.33 -22.46L-59.68 -15.9M-43.05 -52.95L-41.64 -58.61M-43.05 -52.95L-37.39 -54.36M-48.71 -50.12L-50.83 -56.49M-50.12 -48.71L-55.07 -53.66M-51.54 -47.29L-58.61 -47.29M-45.88 -47.29L-39.51 -45.17M-47.29 -45.88L-42.34 -40.93M-48.71 -44.46L-48.71 -37.39M-19.51 -65.62L-16 -70.28M-19.51 -65.62L-13.75 -64.71M-25.82 -65.23L-25.29 -71.92M-27.68 -64.48L-30.3 -70.97M-29.53 -63.73L-36.04 -66.49M-24.32 -61.52L-19.29 -57.08M-26.18 -60.77L-23.56 -54.28M-28.03 -60.02L-30.8 -53.51" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M6 -65.6A2.4 2 90 1 0 6 -70.4A2.4 2 90 1 0 6 -65.6ZM0 -66A2 2.4 90 1 0 -0 -70A2 2.4 90 1 0 0 -66ZM-7 -64.8A3.2 4.2 90 1 0 -7 -71.2A3.2 4.2 90 1 0 -7 -64.8ZM30.66 -58.53A2.4 2 112 1 0 32.46 -62.98A2.4 2 112 1 0 30.66 -58.53ZM25.25 -61.15A2 2.4 112 1 0 26.75 -64.85A2 2.4 112 1 0 25.25 -61.15ZM18.31 -62.66A3.2 4.2 112 1 0 20.71 -68.59A3.2 4.2 112 1 0 18.31 -62.66ZM50.55 -42.06A2.4 2 135 1 0 53.94 -45.45A2.4 2 135 1 0 50.55 -42.06ZM46.59 -46.59A2 2.4 135 1 0 49.41 -49.41A2 2.4 135 1 0 46.59 -46.59ZM40.79 -50.69A3.2 4.2 135 1 0 45.31 -55.21A3.2 4.2 135 1 0 40.79 -50.69ZM63.02 -19.54A2.4 2 158 1 0 67.47 -21.34A2.4 2 158 1 0 63.02 -19.54ZM61.15 -25.25A2 2.4 158 1 0 64.85 -26.75A2 2.4 158 1 0 61.15 -25.25ZM57.41 -31.29A3.2 4.2 158 1 0 63.34 -33.69A3.2 4.2 158 1 0 57.41 -31.29ZM65.6 6A2.4 2 180 1 0 70.4 6A2.4 2 180 1 0 65.6 6ZM66 0A2 2.4 180 1 0 70 -0A2 2.4 180 1 0 66 0ZM64.8 -7A3.2 4.2 180 1 0 71.2 -7A3.2 4.2 180 1 0 64.8 -7ZM58.45 30.59A2.4 2 203 1 0 62.86 32.46A2.4 2 203 1 0 58.45 30.59ZM61.16 25.22A2 2.4 203 1 0 64.84 26.78A2 2.4 203 1 0 61.16 25.22ZM62.79 18.31A3.2 4.2 203 1 0 68.68 20.81A3.2 4.2 203 1 0 62.79 18.31ZM42.06 50.55A2.4 2 225 1 0 45.45 53.94A2.4 2 225 1 0 42.06 50.55ZM46.59 46.59A2 2.4 225 1 0 49.41 49.41A2 2.4 225 1 0 46.59 46.59ZM50.69 40.79A3.2 4.2 225 1 0 55.21 45.31A3.2 4.2 225 1 0 50.69 40.79ZM19.54 63.02A2.4 2 248 1 0 21.34 67.47A2.4 2 248 1 0 19.54 63.02ZM25.25 61.15A2 2.4 248 1 0 26.75 64.85A2 2.4 248 1 0 25.25 61.15ZM31.29 57.41A3.2 4.2 248 1 0 33.69 63.34A3.2 4.2 248 1 0 31.29 57.41ZM-6 65.6A2.4 2 270 1 0 -6 70.4A2.4 2 270 1 0 -6 65.6ZM-0 66A2 2.4 270 1 0 0 70A2 2.4 270 1 0 -0 66ZM7 64.8A3.2 4.2 270 1 0 7 71.2A3.2 4.2 270 1 0 7 64.8ZM-30.59 58.45A2.4 2 293 1 0 -32.46 62.86A2.4 2 293 1 0 -30.59 58.45ZM-25.22 61.16A2 2.4 293 1 0 -26.78 64.84A2 2.4 293 1 0 -25.22 61.16ZM-18.31 62.79A3.2 4.2 293 1 0 -20.81 68.68A3.2 4.2 293 1 0 -18.31 62.79ZM-50.55 42.06A2.4 2 315 1 0 -53.94 45.45A2.4 2 315 1 0 -50.55 42.06ZM-46.59 46.59A2 2.4 315 1 0 -49.41 49.41A2 2.4 315 1 0 -46.59 46.59ZM-40.79 50.69A3.2 4.2 315 1 0 -45.31 55.21A3.2 4.2 315 1 0 -40.79 50.69ZM-63.02 19.54A2.4 2 338 1 0 -67.47 21.34A2.4 2 338 1 0 -63.02 19.54ZM-61.15 25.25A2 2.4 338 1 0 -64.85 26.75A2 2.4 338 1 0 -61.15 25.25ZM-57.41 31.29A3.2 4.2 338 1 0 -63.34 33.69A3.2 4.2 338 1 0 -57.41 31.29ZM-65.6 -6A2.4 2 0 1 0 -70.4 -6A2.4 2 0 1 0 -65.6 -6ZM-66 0A2 2.4 0 1 0 -70 0A2 2.4 0 1 0 -66 0ZM-64.8 7A3.2 4.2 0 1 0 -71.2 7A3.2 4.2 0 1 0 -64.8 7ZM-58.45 -30.59A2.4 2 23 1 0 -62.86 -32.46A2.4 2 23 1 0 -58.45 -30.59ZM-61.16 -25.22A2 2.4 23 1 0 -64.84 -26.78A2 2.4 23 1 0 -61.16 -25.22ZM-62.79 -18.31A3.2 4.2 23 1 0 -68.68 -20.81A3.2 4.2 23 1 0 -62.79 -18.31ZM-42.06 -50.55A2.4 2 45 1 0 -45.45 -53.94A2.4 2 45 1 0 -42.06 -50.55ZM-46.59 -46.59A2 2.4 45 1 0 -49.41 -49.41A2 2.4 45 1 0 -46.59 -46.59ZM-50.69 -40.79A3.2 4.2 45 1 0 -55.21 -45.31A3.2 4.2 45 1 0 -50.69 -40.79ZM-19.54 -63.02A2.4 2 68 1 0 -21.34 -67.47A2.4 2 68 1 0 -19.54 -63.02ZM-25.25 -61.15A2 2.4 68 1 0 -26.75 -64.85A2 2.4 68 1 0 -25.25 -61.15ZM-31.29 -57.41A3.2 4.2 68 1 0 -33.69 -63.34A3.2 4.2 68 1 0 -31.29 -57.41Z" fill="#111"/>
           </g>
           <g fill="#100a28" style="transform-box:fill-box; transform-origin:center; animation:spin 5.5s linear infinite">
-            <use href="#mini-ant-m" transform="translate(0 -48) rotate(90)"/><use href="#mini-ant-m" transform="translate(24 -42) rotate(120)"/><use href="#mini-ant-m" transform="translate(42 -24) rotate(150)"/><use href="#mini-ant-m" transform="translate(48 0) rotate(180)"/><use href="#mini-ant-m" transform="translate(42 24) rotate(210)"/><use href="#mini-ant-m" transform="translate(24 42) rotate(240)"/><use href="#mini-ant-m" transform="translate(0 48) rotate(270)"/><use href="#mini-ant-m" transform="translate(-24 42) rotate(300)"/><use href="#mini-ant-m" transform="translate(-42 24) rotate(330)"/><use href="#mini-ant-m" transform="translate(-48 0) rotate(0)"/><use href="#mini-ant-m" transform="translate(-42 -24) rotate(30)"/><use href="#mini-ant-m" transform="translate(-24 -42) rotate(60)"/>
+            <path d="M7 -48L12 -51M7 -48L12 -45M1 -50L4 -56M-1 -50L-1 -57M-3 -50L-8 -55M1 -46L4 -40M-1 -46L-1 -39M-3 -46L-8 -41M30.06 -38.5L35.89 -38.6M30.06 -38.5L32.89 -33.4M25.87 -43.23L31.46 -46.93M24.13 -44.23L27.63 -50.29M22.4 -45.23L20.57 -52.06M23.87 -39.77L23.46 -33.07M22.13 -40.77L18.63 -34.71M20.4 -41.77L13.57 -39.94M45.5 -17.94L50.6 -15.11M45.5 -17.94L45.4 -12.11M44.23 -24.13L50.93 -24.54M43.23 -25.87L49.29 -29.37M42.23 -27.6L44.06 -34.43M40.77 -22.13L37.07 -16.54M39.77 -23.87L33.71 -20.37M38.77 -25.6L31.94 -27.43M48 7L51 12M48 7L45 12M50 1L56 4M50 -1L57 -1M50 -3L55 -8M46 1L40 4M46 -1L39 -1M46 -3L41 -8M38.5 30.06L38.6 35.89M38.5 30.06L33.4 32.89M43.23 25.87L46.93 31.46M44.23 24.13L50.29 27.63M45.23 22.4L52.06 20.57M39.77 23.87L33.07 23.46M40.77 22.13L34.71 18.63M41.77 20.4L39.94 13.57M17.94 45.5L15.11 50.6M17.94 45.5L12.11 45.4M24.13 44.23L24.54 50.93M25.87 43.23L29.37 49.29M27.6 42.23L34.43 44.06M22.13 40.77L16.54 37.07M23.87 39.77L20.37 33.71M25.6 38.77L27.43 31.94M-7 48L-12 51M-7 48L-12 45M-1 50L-4 56M1 50L1 57M3 50L8 55M-1 46L-4 40M1 46L1 39M3 46L8 41M-30.06 38.5L-35.89 38.6M-30.06 38.5L-32.89 33.4M-25.87 43.23L-31.46 46.93M-24.13 44.23L-27.63 50.29M-22.4 45.23L-20.57 52.06M-23.87 39.77L-23.46 33.07M-22.13 40.77L-18.63 34.71M-20.4 41.77L-13.57 39.94M-45.5 17.94L-50.6 15.11M-45.5 17.94L-45.4 12.11M-44.23 24.13L-50.93 24.54M-43.23 25.87L-49.29 29.37M-42.23 27.6L-44.06 34.43M-40.77 22.13L-37.07 16.54M-39.77 23.87L-33.71 20.37M-38.77 25.6L-31.94 27.43M-48 -7L-51 -12M-48 -7L-45 -12M-50 -1L-56 -4M-50 1L-57 1M-50 3L-55 8M-46 -1L-40 -4M-46 1L-39 1M-46 3L-41 8M-38.5 -30.06L-38.6 -35.89M-38.5 -30.06L-33.4 -32.89M-43.23 -25.87L-46.93 -31.46M-44.23 -24.13L-50.29 -27.63M-45.23 -22.4L-52.06 -20.57M-39.77 -23.87L-33.07 -23.46M-40.77 -22.13L-34.71 -18.63M-41.77 -20.4L-39.94 -13.57M-17.94 -45.5L-15.11 -50.6M-17.94 -45.5L-12.11 -45.4M-24.13 -44.23L-24.54 -50.93M-25.87 -43.23L-29.37 -49.29M-27.6 -42.23L-34.43 -44.06M-22.13 -40.77L-16.54 -37.07M-23.87 -39.77L-20.37 -33.71M-25.6 -38.77L-27.43 -31.94" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M6 -45.6A2.4 2 90 1 0 6 -50.4A2.4 2 90 1 0 6 -45.6ZM0 -46A2 2.4 90 1 0 -0 -50A2 2.4 90 1 0 0 -46ZM-7 -44.8A3.2 4.2 90 1 0 -7 -51.2A3.2 4.2 90 1 0 -7 -44.8ZM28 -36.92A2.4 2 120 1 0 30.4 -41.08A2.4 2 120 1 0 28 -36.92ZM23 -40.27A2 2.4 120 1 0 25 -43.73A2 2.4 120 1 0 23 -40.27ZM16.34 -42.73A3.2 4.2 120 1 0 19.54 -48.27A3.2 4.2 120 1 0 16.34 -42.73ZM42.92 -17.6A2.4 2 150 1 0 47.08 -20A2.4 2 150 1 0 42.92 -17.6ZM40.27 -23A2 2.4 150 1 0 43.73 -25A2 2.4 150 1 0 40.27 -23ZM35.73 -28.46A3.2 4.2 150 1 0 41.27 -31.66A3.2 4.2 150 1 0 35.73 -28.46ZM45.6 6A2.4 2 180 1 0 50.4 6A2.4 2 180 1 0 45.6 6ZM46 0A2 2.4 180 1 0 50 -0A2 2.4 180 1 0 46 0ZM44.8 -7A3.2 4.2 180 1 0 51.2 -7A3.2 4.2 180 1 0 44.8 -7ZM36.92 28A2.4 2 210 1 0 41.08 30.4A2.4 2 210 1 0 36.92 28ZM40.27 23A2 2.4 210 1 0 43.73 25A2 2.4 210 1 0 40.27 23ZM42.73 16.34A3.2 4.2 210 1 0 48.27 19.54A3.2 4.2 210 1 0 42.73 16.34ZM17.6 42.92A2.4 2 240 1 0 20 47.08A2.4 2 240 1 0 17.6 42.92ZM23 40.27A2 2.4 240 1 0 25 43.73A2 2.4 240 1 0 23 40.27ZM28.46 35.73A3.2 4.2 240 1 0 31.66 41.27A3.2 4.2 240 1 0 28.46 35.73ZM-6 45.6A2.4 2 270 1 0 -6 50.4A2.4 2 270 1 0 -6 45.6ZM-0 46A2 2.4 270 1 0 0 50A2 2.4 270 1 0 -0 46ZM7 44.8A3.2 4.2 270 1 0 7 51.2A3.2 4.2 270 1 0 7 44.8ZM-28 36.92A2.4 2 300 1 0 -30.4 41.08A2.4 2 300 1 0 -28 36.92ZM-23 40.27A2 2.4 300 1 0 -25 43.73A2 2.4 300 1 0 -23 40.27ZM-16.34 42.73A3.2 4.2 300 1 0 -19.54 48.27A3.2 4.2 300 1 0 -16.34 42.73ZM-42.92 17.6A2.4 2 330 1 0 -47.08 20A2.4 2 330 1 0 -42.92 17.6ZM-40.27 23A2 2.4 330 1 0 -43.73 25A2 2.4 330 1 0 -40.27 23ZM-35.73 28.46A3.2 4.2 330 1 0 -41.27 31.66A3.2 4.2 330 1 0 -35.73 28.46ZM-45.6 -6A2.4 2 0 1 0 -50.4 -6A2.4 2 0 1 0 -45.6 -6ZM-46 0A2 2.4 0 1 0 -50 0A2 2.4 0 1 0 -46 0ZM-44.8 7A3.2 4.2 0 1 0 -51.2 7A3.2 4.2 0 1 0 -44.8 7ZM-36.92 -28A2.4 2 30 1 0 -41.08 -30.4A2.4 2 30 1 0 -36.92 -28ZM-40.27 -23A2 2.4 30 1 0 -43.73 -25A2 2.4 30 1 0 -40.27 -23ZM-42.73 -16.34A3.2 4.2 30 1 0 -48.27 -19.54A3.2 4.2 30 1 0 -42.73 -16.34ZM-17.6 -42.92A2.4 2 60 1 0 -20 -47.08A2.4 2 60 1 0 -17.6 -42.92ZM-23 -40.27A2 2.4 60 1 0 -25 -43.73A2 2.4 60 1 0 -23 -40.27ZM-28.46 -35.73A3.2 4.2 60 1 0 -31.66 -41.27A3.2 4.2 60 1 0 -28.46 -35.73Z" fill="#111"/>
           </g>
           <g fill="#140c2a" style="transform-box:fill-box; transform-origin:center; animation:spin 3.2s linear infinite">
-            <use href="#mini-ant-m" transform="translate(0 -28) rotate(90)"/><use href="#mini-ant-m" transform="translate(20 -20) rotate(135)"/><use href="#mini-ant-m" transform="translate(28 0) rotate(180)"/><use href="#mini-ant-m" transform="translate(20 20) rotate(225)"/><use href="#mini-ant-m" transform="translate(0 28) rotate(270)"/><use href="#mini-ant-m" transform="translate(-20 20) rotate(315)"/><use href="#mini-ant-m" transform="translate(-28 0) rotate(0)"/><use href="#mini-ant-m" transform="translate(-20 -20) rotate(45)"/>
+            <path d="M7 -28L12 -31M7 -28L12 -25M1 -30L4 -36M-1 -30L-1 -37M-3 -30L-8 -35M1 -26L4 -20M-1 -26L-1 -19M-3 -26L-8 -21M24.95 -15.05L30.61 -13.64M24.95 -15.05L26.36 -9.39M22.12 -20.71L28.49 -22.83M20.71 -22.12L25.66 -27.07M19.29 -23.54L19.29 -30.61M19.29 -17.88L17.17 -11.51M17.88 -19.29L12.93 -14.34M16.46 -20.71L9.39 -20.71M28 7L31 12M28 7L25 12M30 1L36 4M30 -1L37 -1M30 -3L35 -8M26 1L20 4M26 -1L19 -1M26 -3L21 -8M15.05 24.95L13.64 30.61M15.05 24.95L9.39 26.36M20.71 22.12L22.83 28.49M22.12 20.71L27.07 25.66M23.54 19.29L30.61 19.29M17.88 19.29L11.51 17.17M19.29 17.88L14.34 12.93M20.71 16.46L20.71 9.39M-7 28L-12 31M-7 28L-12 25M-1 30L-4 36M1 30L1 37M3 30L8 35M-1 26L-4 20M1 26L1 19M3 26L8 21M-24.95 15.05L-30.61 13.64M-24.95 15.05L-26.36 9.39M-22.12 20.71L-28.49 22.83M-20.71 22.12L-25.66 27.07M-19.29 23.54L-19.29 30.61M-19.29 17.88L-17.17 11.51M-17.88 19.29L-12.93 14.34M-16.46 20.71L-9.39 20.71M-28 -7L-31 -12M-28 -7L-25 -12M-30 -1L-36 -4M-30 1L-37 1M-30 3L-35 8M-26 -1L-20 -4M-26 1L-19 1M-26 3L-21 8M-15.05 -24.95L-13.64 -30.61M-15.05 -24.95L-9.39 -26.36M-20.71 -22.12L-22.83 -28.49M-22.12 -20.71L-27.07 -25.66M-23.54 -19.29L-30.61 -19.29M-17.88 -19.29L-11.51 -17.17M-19.29 -17.88L-14.34 -12.93M-20.71 -16.46L-20.71 -9.39" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M6 -25.6A2.4 2 90 1 0 6 -30.4A2.4 2 90 1 0 6 -25.6ZM0 -26A2 2.4 90 1 0 -0 -30A2 2.4 90 1 0 0 -26ZM-7 -24.8A3.2 4.2 90 1 0 -7 -31.2A3.2 4.2 90 1 0 -7 -24.8ZM22.55 -14.06A2.4 2 135 1 0 25.94 -17.45A2.4 2 135 1 0 22.55 -14.06ZM18.59 -18.59A2 2.4 135 1 0 21.41 -21.41A2 2.4 135 1 0 18.59 -18.59ZM12.79 -22.69A3.2 4.2 135 1 0 17.31 -27.21A3.2 4.2 135 1 0 12.79 -22.69ZM25.6 6A2.4 2 180 1 0 30.4 6A2.4 2 180 1 0 25.6 6ZM26 0A2 2.4 180 1 0 30 -0A2 2.4 180 1 0 26 0ZM24.8 -7A3.2 4.2 180 1 0 31.2 -7A3.2 4.2 180 1 0 24.8 -7ZM14.06 22.55A2.4 2 225 1 0 17.45 25.94A2.4 2 225 1 0 14.06 22.55ZM18.59 18.59A2 2.4 225 1 0 21.41 21.41A2 2.4 225 1 0 18.59 18.59ZM22.69 12.79A3.2 4.2 225 1 0 27.21 17.31A3.2 4.2 225 1 0 22.69 12.79ZM-6 25.6A2.4 2 270 1 0 -6 30.4A2.4 2 270 1 0 -6 25.6ZM-0 26A2 2.4 270 1 0 0 30A2 2.4 270 1 0 -0 26ZM7 24.8A3.2 4.2 270 1 0 7 31.2A3.2 4.2 270 1 0 7 24.8ZM-22.55 14.06A2.4 2 315 1 0 -25.94 17.45A2.4 2 315 1 0 -22.55 14.06ZM-18.59 18.59A2 2.4 315 1 0 -21.41 21.41A2 2.4 315 1 0 -18.59 18.59ZM-12.79 22.69A3.2 4.2 315 1 0 -17.31 27.21A3.2 4.2 315 1 0 -12.79 22.69ZM-25.6 -6A2.4 2 0 1 0 -30.4 -6A2.4 2 0 1 0 -25.6 -6ZM-26 0A2 2.4 0 1 0 -30 0A2 2.4 0 1 0 -26 0ZM-24.8 7A3.2 4.2 0 1 0 -31.2 7A3.2 4.2 0 1 0 -24.8 7ZM-14.06 -22.55A2.4 2 45 1 0 -17.45 -25.94A2.4 2 45 1 0 -14.06 -22.55ZM-18.59 -18.59A2 2.4 45 1 0 -21.41 -21.41A2 2.4 45 1 0 -18.59 -18.59ZM-22.69 -12.79A3.2 4.2 45 1 0 -27.21 -17.31A3.2 4.2 45 1 0 -22.69 -12.79Z" fill="#111"/>
           </g>
         </g>
         <g style="transform-box:fill-box; transform-origin:center bottom; animation:pitCenterSway 1.9s ease-in-out infinite">
-          <use href="#mini-ant-m" transform="scale(1)"/>
+          <g transform="scale(1)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
           <g transform="translate(11 -8) rotate(12)">
             <rect x="-2" y="-18" width="4" height="32" rx="2" fill="#6b4423"/><ellipse cx="0" cy="-18" rx="6" ry="2.6" fill="#2b2438"/><ellipse cx="0" cy="-19" rx="5" ry="2.4" fill="#ff7a3c"/>
             <g transform="translate(0 -20)">
@@ -642,17 +662,17 @@
             </g>
           </g>
         </g>
-        <use href="#mini-ant-m" transform="translate(108 -32) rotate(220)"/><use href="#mini-ant-m" transform="translate(-100 -38) rotate(50)"/><use href="#mini-ant-m" transform="translate(52 108) rotate(305)"/>
+        <g transform="translate(108 -32) rotate(220)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g><g transform="translate(-100 -38) rotate(50)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g><g transform="translate(52 108) rotate(305)"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
       </g>
       <g class="marchers">
-        <use href="#mini-ant-m" style="animation:marchM 14s linear infinite"/>
-        <use href="#mini-ant-m" style="animation:marchM 14s linear 2.6s infinite"/>
-        <use href="#mini-ant-m" style="animation:marchM 14s linear 5.2s infinite"/>
-        <use href="#mini-ant-m" style="animation:marchM 14s linear 7.8s infinite"/>
-        <use href="#mini-ant-m" style="animation:marchM 14s linear 10.4s infinite"/>
+        <g style="animation:marchM 14s linear infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:marchM 14s linear -11.4s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:marchM 14s linear -8.8s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:marchM 14s linear -6.2s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
+        <g style="animation:marchM 14s linear -3.6s infinite"><path d="M0 -7L-3 -12M0 -7L3 -12M-2 -1L-8 -4M-2 1L-9 1M-2 3L-7 8M2 -1L8 -4M2 1L9 1M2 3L7 8" fill="none" stroke="#111" stroke-width="1.4" stroke-linecap="round"/><path d="M2.4 -6A2.4 2 0 1 0 -2.4 -6A2.4 2 0 1 0 2.4 -6ZM2 0A2 2.4 0 1 0 -2 0A2 2.4 0 1 0 2 0ZM3.2 7A3.2 4.2 0 1 0 -3.2 7A3.2 4.2 0 1 0 3.2 7Z" fill="#111"/></g>
       </g>
       <rect x="690" y="200" width="440" height="380" fill="#000" filter="url(#grainM)" opacity=".16" style="mix-blend-mode:overlay; pointer-events:none;"/>
-      <a href="https://www.stadthalle.com/de/shopf/index.php?shopid=9&gotoperformance=72254&language=1" target="_blank" rel="noopener" data-interactive><rect x="800" y="240" width="200" height="66" fill="#00000000"/></a>
+      <a href="https://www.stadthalle.com/de/shopf/index.php?shopid=9&gotoperformance=72254&language=1" target="_blank" rel="noopener" data-interactive aria-label="Stadthalle – Tickets für The Prodigy"><rect x="800" y="240" width="200" height="66" fill="#00000000"/><text x="900" y="324" text-anchor="middle" font-family="'Space Grotesk',sans-serif" font-weight="600" font-size="13" fill="#ff6f91" opacity=".9">Tickets ›</text></a>
     </svg>
   </section>
 
@@ -660,7 +680,7 @@
 </sc-if>
 
   <!-- Sound toggle -->
-  <button data-interactive onClick="{{ toggleSound }}" aria-label="Ton an/aus" style="position:fixed; top:16px; right:16px; z-index:12; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.14); background:rgba(12,8,22,.6); backdrop-filter:blur(8px); box-shadow:0 12px 28px -12px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.08); color:#fff; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; transition:background .18s ease, border-color .18s ease, transform .18s ease;" style-hover="background:rgba(36,21,60,.9); border-color:rgba(0,212,170,.5); transform:scale(1.06)" style-active="transform:scale(.96)">{{ soundIcon }}</button>
+  <button class="snd" data-interactive onClick="{{ toggleSound }}" aria-label="Ton an/aus" aria-pressed="{{ soundOn }}" style="position:fixed; top:16px; right:16px; z-index:12; width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,255,255,.14); background:rgba(12,8,22,.6); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); box-shadow:0 12px 28px -12px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.08); color:#fff; font-size:18px; line-height:1; display:flex; align-items:center; justify-content:center; transition:background .18s ease, border-color .18s ease, transform .18s ease;">{{ soundIcon }}</button>
 
   <!-- Crawlers -->
   <sc-for list="{{ crawlers }}" as="c" hint-placeholder-count="0">
@@ -672,10 +692,10 @@
   <!-- FLASH WARNING -->
   <sc-if value="{{ warnVisible }}" hint-placeholder-val="{{ true }}">
     <div style="{{ warnStyle }}">
-      <div style="font-family:'Archivo Black',sans-serif; font-size:clamp(22px,4.4vw,34px); line-height:1.14; letter-spacing:-.5px; color:#fff; max-width:18ch; text-wrap:balance;">GLEICH BLINKT ES</div>
+      <div style="margin-top:auto; font-family:'Archivo Black',sans-serif; font-size:clamp(22px,4.4vw,34px); line-height:1.14; letter-spacing:-.5px; color:#fff; max-width:18ch; text-wrap:balance;">GLEICH BLINKT ES</div>
       <p style="margin:0; max-width:36ch; font-size:15px; line-height:1.6; color:#c3bad9; text-wrap:pretty;">Die nächste Seite enthält schnelle Lichtblitze. Wenn du lichtempfindlich bist, schließ bitte kurz die Augen.</p>
-      <div style="width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Archivo Black',sans-serif; font-size:30px; color:#00d4aa; background:radial-gradient(circle at 50% 30%,rgba(0,212,170,.18),rgba(0,212,170,.04)); border:1px solid rgba(0,212,170,.45); box-shadow:0 14px 34px -14px rgba(0,212,170,.55), inset 0 1px 0 rgba(255,255,255,.08);">{{ warnCount }}</div>
-      <button data-interactive onClick="{{ skipFlash }}" style="display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; min-height:44px; padding:0 20px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.2); color:#cfc8de; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; letter-spacing:.3px; transition:background .18s ease, border-color .18s ease, color .18s ease;" style-hover="background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.4); color:#fff">Blitze überspringen ›</button>
+      <div style="flex:none; width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Archivo Black',sans-serif; font-size:30px; color:#00d4aa; background:radial-gradient(circle at 50% 30%,rgba(0,212,170,.18),rgba(0,212,170,.04)); border:1px solid rgba(0,212,170,.45); box-shadow:0 14px 34px -14px rgba(0,212,170,.55), inset 0 1px 0 rgba(255,255,255,.08);">{{ warnCount }}</div>
+      <button class="skip" data-interactive onClick="{{ skipFlash }}" style="margin-bottom:auto; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; min-height:44px; padding:0 20px; border-radius:999px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.2); color:#cfc8de; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; letter-spacing:.3px; transition:background .18s ease, border-color .18s ease, color .18s ease;">Blitze überspringen ›</button>
     </div>
   </sc-if>
 
@@ -683,13 +703,14 @@
   <sc-if value="{{ introVisible }}" hint-placeholder-val="{{ true }}">
     <div data-interactive onClick="{{ skipIntro }}" style="{{ introStyle }}">
       <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:#fff; animation:introFlicker .1s steps(1) infinite;">
-        <img src="bilder/prodigy-ant.png" alt="The Prodigy Ant" style="width:min(58vmin,460px); height:auto; animation:introAntPulse .5s ease-in-out infinite;"/>
+        <img src="bilder/prodigy-ant.svg" width="600" height="600" alt="The Prodigy Ant" style="width:min(58vmin,460px); height:auto; animation:introAntPulse .5s ease-in-out infinite;"/>
       </div>
     </div>
   </sc-if>
 
 </div>
 </x-dc>
+<div id="legacy-fb">Lorenz' Geburtstag · 24.11.2026 · Café Journal → Stadthalle (The Prodigy)</div>
 <script type="text/x-dc" data-dc-script data-props="{
   &quot;$preview&quot;: { &quot;width&quot;: &quot;100%&quot;, &quot;height&quot;: &quot;100%&quot; },
   &quot;soundDefault&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Verhalten&quot; }
@@ -698,38 +719,63 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this._mq = (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(max-width: 700px), (max-aspect-ratio: 1/1)') : null;
+    // Intro nur einmal pro Tab zeigen (z. B. nicht nach versehentlichem Neuladen) und nie bei "Bewegung reduzieren"
+    this._rm = !!(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    let seen = false;
+    try { seen = sessionStorage.getItem('introSeen') === '1'; } catch (e) {}
+    this._skipIntro = this._rm || seen;
     this.state = {
       soundOn: !!(props && props.soundDefault),
       activeZone: null,
       crawlers: [],
       days: null,
-      warnVisible: true,
+      warnVisible: !this._skipIntro,
       warnCount: 3,
-      introVisible: true,
+      introVisible: !this._skipIntro,
       introFading: false,
-      moonFace: 1,
       taxiOn: false,
       isMobile: this._mq ? this._mq.matches : false,
     };
   }
 
+  markIntroSeen() { try { sessionStorage.setItem('introSeen', '1'); } catch (e) {} }
   startIntroTimers() {
     this._introFade = setTimeout(() => this.setState({ introFading: true }), 2500);
-    this._introEnd = setTimeout(() => this.setState({ introVisible: false }), 3000);
+    this._introEnd = setTimeout(() => { this.markIntroSeen(); this.setState({ introVisible: false }); }, 3000);
   }
   skipFlash = (e) => {
     if (e) e.stopPropagation();
     clearInterval(this._warnTimer);
+    this.markIntroSeen();
     this.setState({ warnVisible: false, introVisible: false });
   };
   skipIntro = (e) => {
     if (e) e.stopPropagation();
     clearTimeout(this._introFade); clearTimeout(this._introEnd);
+    this.markIntroSeen();
     this.setState({ introFading: true });
     this._introEnd = setTimeout(() => this.setState({ introVisible: false }), 450);
   };
 
   componentDidMount() {
+    const fb = document.getElementById('legacy-fb');
+    if (fb && fb.parentNode) fb.parentNode.removeChild(fb);
+    // Browser ohne WebP (z. B. Safari auf macOS 10.15): Bild durch die PNG-Kopie ersetzen
+    this._onImgError = (e) => {
+      const el = e.target, h = el && el.getAttribute && el.getAttribute('href');
+      if (h && /\.webp$/.test(h)) el.setAttribute('href', h.slice(0, -5) + '.png');
+    };
+    document.addEventListener('error', this._onImgError, true);
+    if (!this._skipIntro) document.documentElement.classList.add('dc-intro');
+    // Szenen ausserhalb des Bildschirms pausieren (nur Handy-Layout)
+    this._io = ('IntersectionObserver' in window) ? new IntersectionObserver(es => es.forEach(en => {
+      if (en.isIntersecting) en.target.removeAttribute('data-off'); else en.target.setAttribute('data-off', '');
+    })) : null;
+    this._ioScan = () => {
+      if (!this._io) return;
+      document.querySelectorAll('.m-hall,.m-lorenz').forEach(el => { if (!el.__io) { el.__io = 1; this._io.observe(el); } });
+    };
+    setTimeout(this._ioScan, 0);
     const tick = () => {
       const target = new Date('2026-11-24T00:00:00');
       const days = Math.max(0, Math.ceil((target - new Date()) / 86400000));
@@ -737,7 +783,7 @@ class Component extends DCLogic {
     };
     tick();
     this._timer = setInterval(tick, 60000);
-    this._warnTimer = setInterval(() => {
+    if (!this._skipIntro) this._warnTimer = setInterval(() => {
       const n = this.state.warnCount - 1;
       if (n <= 0) {
         clearInterval(this._warnTimer);
@@ -747,21 +793,23 @@ class Component extends DCLogic {
         this.setState({ warnCount: n });
       }
     }, 1000);
-    this.scheduleMoon();
     this.scheduleTaxi(true);
     if (this._mq) {
-      this._onMq = (e) => this.setState({ isMobile: e.matches });
+      // Beim Drehen: Taxi nicht mitten in der Fahrt neu starten, Scrollposition im Hochformat merken
+      this._onMq = (e) => {
+        const y = window.scrollY;
+        if (!e.matches) this._lastMobileY = y;
+        clearTimeout(this._taxiTimer);
+        this.setState({ isMobile: e.matches, taxiOn: false }, () => { if (e.matches) window.scrollTo(0, this._lastMobileY || 0); });
+        this.scheduleTaxi(false);
+      };
       if (this._mq.addEventListener) this._mq.addEventListener('change', this._onMq);
       else this._mq.addListener(this._onMq);
     }
   }
-  scheduleMoon() {
-    const next = () => {
-      const toFace2 = this.state.moonFace === 1;
-      this.setState({ moonFace: toFace2 ? 2 : 1 });
-      this._moonTimer = setTimeout(next, toFace2 ? 1000 : 5000);
-    };
-    this._moonTimer = setTimeout(next, 5000);
+  componentDidUpdate() {
+    if (!this.state.warnVisible && !this.state.introVisible) document.documentElement.classList.remove('dc-intro');
+    if (this._ioScan) this._ioScan();
   }
   scheduleTaxi(first) {
     const wait = first ? 6000 + Math.random() * 6000 : 10000 + Math.random() * 25000;
@@ -775,7 +823,10 @@ class Component extends DCLogic {
   }
   componentWillUnmount() {
     clearTimeout(this._taxiTimer);
-    clearInterval(this._timer); clearInterval(this._warnTimer); clearTimeout(this._moonTimer); clearTimeout(this._introFade); clearTimeout(this._introEnd);
+    clearInterval(this._timer); clearInterval(this._warnTimer); clearTimeout(this._introFade); clearTimeout(this._introEnd);
+    if (this._io) this._io.disconnect();
+    document.removeEventListener('error', this._onImgError, true);
+    document.documentElement.classList.remove('dc-intro');
     if (this._mq && this._onMq) {
       if (this._mq.removeEventListener) this._mq.removeEventListener('change', this._onMq);
       else this._mq.removeListener(this._onMq);
@@ -784,11 +835,16 @@ class Component extends DCLogic {
   }
 
   ensureAudio() {
+    // iPhone: Ton auch bei Stummschalter (nur nach aktivem Einschalten durch den Gast)
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     if (!this.audio) {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (AC) this.audio = new AC();
     }
-    if (this.audio && this.audio.state === 'suspended') this.audio.resume();
+    if (this.audio && (this.audio.state === 'suspended' || this.audio.state === 'interrupted')) {
+      const pr = this.audio.resume();
+      if (pr && pr.catch) pr.catch(() => {});
+    }
     return this.audio;
   }
   tone({ freqs, type = 'sine', dur = 0.5, gain = 0.08, when = 0 }) {
@@ -800,7 +856,7 @@ class Component extends DCLogic {
       g.gain.setValueAtTime(0.0001, t0);
       g.gain.linearRampToValueAtTime(gain, t0 + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      o.connect(g).connect(ac.destination);
+      o.connect(g); g.connect(ac.destination);
       o.start(t0); o.stop(t0 + dur + 0.05);
     });
   }
@@ -811,6 +867,10 @@ class Component extends DCLogic {
     const on = !this.state.soundOn;
     this.setState({ soundOn: on });
     if (on) { this.ensureAudio(); this.tone({ freqs:[660,990], type:'triangle', dur:0.18, gain:0.05 }); }
+    else {
+      if (this.audio && this.audio.state === 'running' && this.audio.suspend) this.audio.suspend().catch(() => {});
+      try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch (e) {}
+    }
   };
 
   enterBar = () => { if (this.state.activeZone !== 'bar') { this.setState({ activeZone:'bar' }); this.playBar(); } };
@@ -848,7 +908,11 @@ class Component extends DCLogic {
       daysEl2: React.createElement('tspan', null, s.days == null ? '' : String(s.days)),
       isMobile: s.isMobile,
       isDesktop: !s.isMobile,
-      soundIcon: s.soundOn ? '🔊' : '🔇',
+      soundOn: s.soundOn ? 'true' : 'false',
+      soundIcon: React.createElement('svg', { width:22, height:22, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.9, strokeLinecap:'round', strokeLinejoin:'round', 'aria-hidden':'true', style:{ display:'block', color: s.soundOn ? '#00d4aa' : 'rgba(255,255,255,.72)' } },
+        React.createElement('path', { d:'M3.5 9.5h3.6L12 5.6v12.8l-4.9-3.9H3.5z', fill:'currentColor', stroke:'none' }),
+        s.soundOn ? [React.createElement('path', { key:'a', d:'M15.6 9.2a4 4 0 0 1 0 5.6' }), React.createElement('path', { key:'b', d:'M18.2 6.6a7.6 7.6 0 0 1 0 10.8' })]
+                  : [React.createElement('path', { key:'a', d:'M16 9.5l5 5' }), React.createElement('path', { key:'b', d:'M21 9.5l-5 5' })]),
       crawlers: s.crawlers.map(c => ({
         id: c.id,
         style: { position:'fixed', left:(c.x-13)+'px', top:(c.y-13)+'px', zIndex:5, pointerEvents:'none', '--dx':c.dx+'px', '--dy':c.dy+'px', '--rot':c.rot+'deg', animation:'crawlAway 2.2s ease-in forwards' },
@@ -858,14 +922,12 @@ class Component extends DCLogic {
       skipFlash: this.skipFlash,
       warnStyle: {
         position:'fixed', inset:0, zIndex:60, display:'flex', flexDirection:'column',
-        alignItems:'center', justifyContent:'center', gap:'24px', padding:'32px', textAlign:'center',
+        alignItems:'center', justifyContent:'flex-start', gap:'clamp(10px, 3.5vh, 24px)', padding:'clamp(12px, 4vh, 32px) 32px', overflowY:'auto', textAlign:'center',
         background:'radial-gradient(120% 80% at 50% 18%, #2a1a5c 0%, #0d0722 66%)',
         fontFamily:"'Space Grotesk',sans-serif",
       },
       introVisible: s.introVisible && !s.warnVisible,
       taxiOn: s.taxiOn,
-      moonFace1: s.moonFace === 1,
-      moonFace2: s.moonFace === 2,
       introStyle: {
         position:'fixed', inset:0, zIndex:50, overflow:'hidden', cursor:'pointer',
         animation: s.introFading ? 'introFade .45s ease forwards' : 'none',
