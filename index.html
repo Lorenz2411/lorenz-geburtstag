@@ -59,7 +59,7 @@
     @keyframes taxiStep {from{transform:rotate(-24deg)}to{transform:rotate(24deg)}}
     @keyframes taxiPax1 {0%,26%{transform:translate(270px,500px) scale(1);opacity:0}27%{transform:translate(268px,494px) scale(1);opacity:1}29%{transform:translate(262px,484px) scale(1);opacity:1}38%{transform:translate(224px,471px) scale(1);opacity:1}40%,100%{transform:translate(222px,470px) scale(.8);opacity:0}}
     @keyframes taxiPax2 {0%,30%{transform:translate(296px,500px) scale(1);opacity:0}31%{transform:translate(296px,494px) scale(1);opacity:1}33%{transform:translate(290px,484px) scale(1);opacity:1}43%{transform:translate(228px,471px) scale(1);opacity:1}45%,100%{transform:translate(222px,470px) scale(.8);opacity:0}}
-    @media (prefers-reduced-motion: reduce){*{animation:none !important}}
+    @media (prefers-reduced-motion: reduce){*{animation:none !important} .pop-face{transform:none !important} .marchers{display:none}}
     @media (min-width: 600px){ .m-scene { -webkit-mask-image:linear-gradient(90deg,transparent calc(50% - 300px),#000 calc(50% - 250px),#000 calc(50% + 250px),transparent calc(50% + 300px)); mask-image:linear-gradient(90deg,transparent calc(50% - 300px),#000 calc(50% - 250px),#000 calc(50% + 250px),transparent calc(50% + 300px)); } }
   </style>
 </helmet>
@@ -129,10 +129,10 @@
       <!-- Moon = Keith -->
       <circle cx="1050" cy="105" r="110" fill="url(#moonGlow)" opacity=".7"/>
       <sc-if value="{{ moonFace1 }}" hint-placeholder-val="{{ true }}">
-        <foreignObject x="960" y="18" width="170" height="170" style="overflow:visible;"><div xmlns="http://www.w3.org/1999/xhtml" style="width:170px; height:170px;"><img src="bilder/keith-1.png" alt="Keith Flint" style="width:170px; height:170px; object-fit:contain; display:block; filter:saturate(.8) contrast(1.05) brightness(1.02) drop-shadow(0 0 10px #ffe27a) drop-shadow(0 0 26px rgba(255,216,107,.8)) drop-shadow(0 0 50px rgba(255,200,70,.5));"/></div></foreignObject>
+        <filter id="keithFx0" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.9024 0.1532 0.0154 0 -0.0255  0.0456 1.01 0.0154 0 -0.0255  0.0456 0.1532 0.8722 0 -0.0255  0 0 0 1 0" result="img"/><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b1"/><feFlood flood-color="#ffe27a"/><feComposite in2="b1" operator="in" result="g1"/><feGaussianBlur in="SourceAlpha" stdDeviation="13" result="b2"/><feFlood flood-color="#ffd86b" flood-opacity=".8"/><feComposite in2="b2" operator="in" result="g2"/><feGaussianBlur in="SourceAlpha" stdDeviation="25" result="b3"/><feFlood flood-color="#ffc846" flood-opacity=".5"/><feComposite in2="b3" operator="in" result="g3"/><feMerge><feMergeNode in="g3"/><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="img"/></feMerge></filter><image href="bilder/keith-1.png" x="960" y="18" width="170" height="170" preserveAspectRatio="xMidYMid meet" filter="url(#keithFx0)"><title>Keith Flint</title></image>
       </sc-if>
       <sc-if value="{{ moonFace2 }}" hint-placeholder-val="{{ false }}">
-        <foreignObject x="960" y="18" width="170" height="170" style="overflow:visible;"><div xmlns="http://www.w3.org/1999/xhtml" style="width:170px; height:170px;"><img src="bilder/keith-2.png" alt="Keith Flint" style="width:170px; height:170px; object-fit:contain; display:block; filter:saturate(.8) contrast(1.05) brightness(1.02) drop-shadow(0 0 10px #ffe27a) drop-shadow(0 0 26px rgba(255,216,107,.8)) drop-shadow(0 0 50px rgba(255,200,70,.5));"/></div></foreignObject>
+        <filter id="keithFx1" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.9024 0.1532 0.0154 0 -0.0255  0.0456 1.01 0.0154 0 -0.0255  0.0456 0.1532 0.8722 0 -0.0255  0 0 0 1 0" result="img"/><feGaussianBlur in="SourceAlpha" stdDeviation="5" result="b1"/><feFlood flood-color="#ffe27a"/><feComposite in2="b1" operator="in" result="g1"/><feGaussianBlur in="SourceAlpha" stdDeviation="13" result="b2"/><feFlood flood-color="#ffd86b" flood-opacity=".8"/><feComposite in2="b2" operator="in" result="g2"/><feGaussianBlur in="SourceAlpha" stdDeviation="25" result="b3"/><feFlood flood-color="#ffc846" flood-opacity=".5"/><feComposite in2="b3" operator="in" result="g3"/><feMerge><feMergeNode in="g3"/><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="img"/></feMerge></filter><image href="bilder/keith-2.png" x="960" y="18" width="170" height="170" preserveAspectRatio="xMidYMid meet" filter="url(#keithFx1)"><title>Keith Flint</title></image>
       </sc-if>
 
       <!-- Skyline (defocused) -->
@@ -182,7 +182,7 @@
           <g style="animation:neonBuzz 7s linear infinite;">
             <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">NOCH</text>
             <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">NOCH</text>
-            <foreignObject x="-36" y="-36" width="80" height="50"><div xmlns="http://www.w3.org/1999/xhtml" style="width:80px; height:50px; display:flex; align-items:center; justify-content:center; font-family:'Anton',sans-serif; font-size:40px; line-height:1; color:#fff0f5; text-shadow:0 0 3px #ff3d78, 0 0 8px #ff3d78, 0 0 18px rgba(255,61,120,.8), 0 0 34px rgba(255,61,120,.5);">{{ days }}</div></foreignObject>
+            <text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#ff3d78" filter="url(#neon)">{{ daysEl }}</text><text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#fff0f5">{{ daysEl2 }}</text>
             <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">TAGE</text>
             <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">TAGE</text>
           </g>
@@ -207,7 +207,7 @@
         <rect x="90" y="380" width="80" height="70" fill="url(#barWin)" style="animation:flicker 4s ease-in-out infinite"/>
         <g clip-path="url(#barWindowClip)">
           <rect x="90" y="380" width="80" height="70" fill="#3a2418"/>
-          <foreignObject x="90" y="380" width="80" height="70"><div xmlns="http://www.w3.org/1999/xhtml" style="width:80px; height:70px; overflow:hidden;"><img src="bilder/cafe-guest.webp" alt="Gast im Café" style="width:150px; height:150px; margin-left:-40px; margin-top:-8px; display:block; filter:sepia(.25) saturate(.9) brightness(1.02);"/></div></foreignObject>
+          <filter id="toneFx2" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.804 0.2488 0.0532 0 0  0.1054 0.9183 0.0484 0 0  0.0877 0.1949 0.7284 0 0  0 0 0 1 0" result="c"/></filter><image href="bilder/cafe-guest.webp" x="50" y="372" width="150" height="150" preserveAspectRatio="none" filter="url(#toneFx2)"><title>Gast im Café</title></image>
         </g>
         <rect x="90" y="380" width="80" height="70" fill="url(#barWin)" opacity="0.14"/>
         <rect x="90" y="380" width="80" height="70" fill="url(#glass)"/>
@@ -216,7 +216,7 @@
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" style="animation:flicker 4s ease-in-out 1.5s infinite"/>
         <g clip-path="url(#barWindowClipR)">
           <rect x="270" y="380" width="80" height="70" fill="#3a2418"/>
-          <foreignObject x="270" y="380" width="80" height="70"><div xmlns="http://www.w3.org/1999/xhtml" style="width:80px; height:70px; overflow:hidden;"><img src="bilder/marta-bar.png" alt="Marta hinter der Bar" style="width:86px; height:79px; margin-left:-5px; margin-top:-3px; display:block; filter:sepia(.2) saturate(.9) brightness(1.06) contrast(1.03);"/></div></foreignObject>
+          <filter id="toneFx4" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.8896 0.2287 0.0471 0 -0.015  0.0949 0.9985 0.043 0 -0.015  0.0798 0.1825 0.8218 0 -0.015  0 0 0 1 0" result="c"/></filter><image href="bilder/marta-bar.png" x="265" y="377" width="86" height="79" preserveAspectRatio="none" filter="url(#toneFx4)"><title>Marta hinter der Bar</title></image>
         </g>
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" opacity="0.16"/>
         <rect x="270" y="380" width="80" height="70" fill="url(#glass)"/>
@@ -247,7 +247,7 @@
         <g stroke="#0a0712" stroke-opacity=".5" stroke-width="1"><line x1="700" y1="300" x2="1120" y2="300"/><line x1="700" y1="360" x2="1120" y2="360"/><line x1="700" y1="420" x2="1120" y2="420"/></g>
         <!-- hall opening: photo -->
         <g clip-path="url(#hallClip)">
-          <foreignObject x="745" y="262" width="310" height="208"><div xmlns="http://www.w3.org/1999/xhtml" style="width:310px; height:208px; overflow:hidden; position:relative; border-radius:155px 155px 0 0 / 68px 68px 0 0; background:radial-gradient(90% 70% at 50% 42%, #2a0c2e 0%, #0d0616 60%, #05030a 100%);"><div style="position:absolute; left:0; right:0; bottom:0; height:44px; background:linear-gradient(180deg,#1a1224,#07050c); border-top:2px solid #3a2a48;"></div><div style="position:absolute; left:8px; right:8px; bottom:42px; height:5px; background:linear-gradient(90deg,#ff3366,#ffd86b,#00d4aa,#ff3366); filter:blur(2px); opacity:.7;"></div><div style="position:absolute; left:20px; right:20px; bottom:56px; height:130px; background:radial-gradient(60% 70% at 50% 60%, rgba(255,51,102,.55), rgba(255,51,102,0) 70%); filter:blur(8px);"></div><img src="bilder/prodigy-logo.jpg" alt="The Prodigy" style="position:absolute; left:25px; top:44px; width:260px; height:auto; display:block; filter:invert(1) drop-shadow(0 0 4px #fff) drop-shadow(0 0 14px #ff3366) drop-shadow(0 0 30px rgba(255,51,102,.8)); mix-blend-mode:screen; animation:neonBuzz 5s linear infinite;"/></div></foreignObject>
+          <defs><radialGradient id="hallBg6" cx=".5" cy=".42" r=".9" gradientTransform="translate(.5 .42) scale(1 .7778) translate(-.5 -.42)"><stop offset="0" stop-color="#2a0c2e"/><stop offset=".6" stop-color="#0d0616"/><stop offset="1" stop-color="#05030a"/></radialGradient><linearGradient id="hallFloor7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1224"/><stop offset="1" stop-color="#07050c"/></linearGradient><linearGradient id="hallStrip8" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff3366"/><stop offset=".33" stop-color="#ffd86b"/><stop offset=".66" stop-color="#00d4aa"/><stop offset="1" stop-color="#ff3366"/></linearGradient><radialGradient id="hallGlow9" cx=".5" cy=".6" r=".7" gradientTransform="translate(.5 .6) scale(.857 1) translate(-.5 -.6)"><stop offset="0" stop-color="#ff3366" stop-opacity=".55"/><stop offset="1" stop-color="#ff3366" stop-opacity="0"/></radialGradient><filter id="blurS11" x="-5%" y="-200%" width="110%" height="500%"><feGaussianBlur stdDeviation="2"/></filter><filter id="blurL12" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="8"/></filter><filter id="logoFx10" x="-15%" y="-25%" width="130%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -.2126 -.7152 -.0722 0 1" result="raw"/><feComposite in="raw" in2="SourceAlpha" operator="in" result="logo"/><feGaussianBlur in="logo" stdDeviation="1.2" result="w1"/><feGaussianBlur in="logo" stdDeviation="5" result="p1"/><feFlood flood-color="#ff3366" flood-opacity=".55"/><feComposite in2="p1" operator="in" result="g1"/><feGaussianBlur in="logo" stdDeviation="12" result="p2"/><feFlood flood-color="#ff3366" flood-opacity=".3"/><feComposite in2="p2" operator="in" result="g2"/><feMerge><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="w1"/><feMergeNode in="logo"/></feMerge></filter></defs><rect x="745" y="262" width="310" height="208" fill="url(#hallBg6)"/><rect x="765" y="284" width="270" height="130" fill="url(#hallGlow9)" filter="url(#blurL12)"/><g opacity=".55" filter="url(#blurL12)"><rect x="752" y="300" width="14" height="160" fill="#ff3366"/><rect x="1034" y="300" width="14" height="160" fill="#ff3366"/></g><rect x="753" y="423" width="294" height="5" fill="url(#hallStrip8)" opacity=".7" filter="url(#blurS11)"/><rect x="745" y="426" width="310" height="44" fill="url(#hallFloor7)"/><rect x="745" y="426" width="310" height="2" fill="#3a2a48"/><image href="bilder/prodigy-logo.jpg" x="770" y="306" width="260" height="146.25" preserveAspectRatio="xMidYMid meet" filter="url(#logoFx10)" style="animation:neonBuzz 5s linear infinite;"><title>The Prodigy</title></image>
           <rect x="745" y="262" width="310" height="208" fill="url(#hallVig)"/>
           <rect x="745" y="262" width="310" height="208" fill="url(#hallVigX)"/>
           <g style="mix-blend-mode:screen;">
@@ -318,17 +318,17 @@
       <g>
         <defs><clipPath id="clipPop"><ellipse cx="575" cy="234" rx="41" ry="20"/><rect x="420" y="0" width="320" height="234"/></clipPath></defs>
         <ellipse cx="577" cy="506" rx="70" ry="10" fill="#000" opacity=".4"/>
-        <foreignObject x="472" y="154" width="210" height="352" style="overflow:visible;"><div xmlns="http://www.w3.org/1999/xhtml" style="width:210px; height:352px;"><img src="bilder/bin.png" alt="" style="width:210px; height:352px; object-fit:contain; display:block; filter:brightness(.72) saturate(.9) contrast(1.05) drop-shadow(0 10px 14px rgba(0,0,0,.6));"/></div></foreignObject>
+        <filter id="shadowFx20" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.6965 0.0541 0.0054 0 -0.025  0.0161 0.7345 0.0054 0 -0.025  0.0161 0.0541 0.6858 0 -0.025  0 0 0 1 0" result="c"/><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/bin.png" x="472" y="154" width="210" height="352" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx20)"></image>
         <g clip-path="url(#clipPop)">
-          <g style="animation:popOut 6s ease-in-out infinite; transform:translateY(150px);">
-            <foreignObject x="528" y="127" width="95" height="117" style="overflow:visible;"><div xmlns="http://www.w3.org/1999/xhtml" style="width:95px; height:117px;"><img src="bilder/face.png" alt="Lorenz" style="width:95px; height:117px; object-fit:contain; display:block; filter:drop-shadow(0 10px 14px rgba(0,0,0,.6));"/></div></foreignObject>
+          <g class="pop-face" style="animation:popOut 6s ease-in-out infinite; transform:translateY(150px);">
+            <filter id="shadowFx22" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/face.png" x="528" y="127" width="95" height="117" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx22)"><title>Lorenz</title></image>
             <circle cx="564.5" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out infinite;"/>
             <circle cx="587" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out .12s infinite;"/>
           </g>
         </g>
       </g>
       <!-- Marching ants: bar → hall -->
-      <g>
+      <g class="marchers">
         <use href="#mini-ant" transform="rotate(90)" style="animation:march 14s linear infinite"/>
         <use href="#mini-ant" style="animation:march 14s linear 2.6s infinite"/>
         <use href="#mini-ant" style="animation:march 14s linear 5.2s infinite"/>
@@ -359,7 +359,7 @@
           <g style="transform:translateX(1400px); animation:taxiDrive 16s linear both;">
             <ellipse cx="222" cy="546" rx="104" ry="7" fill="#000" opacity=".5"/>
             <path d="M126 520 L-10 504 L-10 548 L126 536 Z" fill="url(#taxiBeam)" style="opacity:0; animation:taxiLights 16s linear both;"/>
-            <image href="bilder/taxi.png" x="120" y="472" width="200" height="75.5" style="filter:brightness(.74) contrast(1.05) saturate(.92);"/>
+            <filter id="taxiFx24" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.7281 0.0444 0.0045 0 -0.025  0.0132 0.7593 0.0045 0 -0.025  0.0132 0.0444 0.7193 0 -0.025  0 0 0 1 0" result="c"/></filter><image href="bilder/taxi.png" x="120" y="472" width="200" height="75.5" filter="url(#taxiFx24)"/>
           </g>
         </g>
       </sc-if>
@@ -435,7 +435,7 @@
           <g style="animation:neonBuzz 7s linear infinite;">
             <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">NOCH</text>
             <text x="-66" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">NOCH</text>
-            <foreignObject x="-36" y="-36" width="80" height="50"><div xmlns="http://www.w3.org/1999/xhtml" style="width:80px; height:50px; display:flex; align-items:center; justify-content:center; font-family:'Anton',sans-serif; font-size:40px; line-height:1; color:#fff0f5; text-shadow:0 0 3px #ff3d78, 0 0 8px #ff3d78, 0 0 18px rgba(255,61,120,.8), 0 0 34px rgba(255,61,120,.5);">{{ days }}</div></foreignObject>
+            <text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#ff3d78" filter="url(#neon)">{{ daysEl }}</text><text x="4" y="3" text-anchor="middle" font-family="'Anton',sans-serif" font-size="40" fill="#fff0f5">{{ daysEl2 }}</text>
             <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ff3d78" filter="url(#neon)">TAGE</text>
             <text x="70" y="0" text-anchor="middle" font-family="'Anton',sans-serif" font-size="17" letter-spacing="2.5" fill="#ffe3ec">TAGE</text>
           </g>
@@ -457,7 +457,7 @@
         <rect x="90" y="380" width="80" height="70" fill="url(#barWin)" style="animation:flicker 4s ease-in-out infinite"/>
         <g clip-path="url(#barWindowClip)">
           <rect x="90" y="380" width="80" height="70" fill="#3a2418"/>
-          <foreignObject x="90" y="380" width="80" height="70"><div xmlns="http://www.w3.org/1999/xhtml" style="width:80px; height:70px; overflow:hidden;"><img src="bilder/cafe-guest.webp" alt="Gast im Café" style="width:150px; height:150px; margin-left:-40px; margin-top:-8px; display:block; filter:sepia(.25) saturate(.9) brightness(1.02);"/></div></foreignObject>
+          <filter id="toneFx3" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.804 0.2488 0.0532 0 0  0.1054 0.9183 0.0484 0 0  0.0877 0.1949 0.7284 0 0  0 0 0 1 0" result="c"/></filter><image href="bilder/cafe-guest.webp" x="50" y="372" width="150" height="150" preserveAspectRatio="none" filter="url(#toneFx3)"><title>Gast im Café</title></image>
         </g>
         <rect x="90" y="380" width="80" height="70" fill="url(#barWin)" opacity="0.14"/>
         <rect x="90" y="380" width="80" height="70" fill="url(#glass)"/>
@@ -466,7 +466,7 @@
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" style="animation:flicker 4s ease-in-out 1.5s infinite"/>
         <g clip-path="url(#barWindowClipR)">
           <rect x="270" y="380" width="80" height="70" fill="#3a2418"/>
-          <foreignObject x="270" y="380" width="80" height="70"><div xmlns="http://www.w3.org/1999/xhtml" style="width:80px; height:70px; overflow:hidden;"><img src="bilder/marta-bar.png" alt="Marta hinter der Bar" style="width:86px; height:79px; margin-left:-5px; margin-top:-3px; display:block; filter:sepia(.2) saturate(.9) brightness(1.06) contrast(1.03);"/></div></foreignObject>
+          <filter id="toneFx5" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.8896 0.2287 0.0471 0 -0.015  0.0949 0.9985 0.043 0 -0.015  0.0798 0.1825 0.8218 0 -0.015  0 0 0 1 0" result="c"/></filter><image href="bilder/marta-bar.png" x="265" y="377" width="86" height="79" preserveAspectRatio="none" filter="url(#toneFx5)"><title>Marta hinter der Bar</title></image>
         </g>
         <rect x="270" y="380" width="80" height="70" fill="url(#barWin)" opacity="0.16"/>
         <rect x="270" y="380" width="80" height="70" fill="url(#glass)"/>
@@ -507,7 +507,7 @@
           <g style="transform:translateX(1400px); animation:taxiDrive 16s linear both;">
             <ellipse cx="222" cy="546" rx="104" ry="7" fill="#000" opacity=".5"/>
             <path d="M126 520 L-10 504 L-10 548 L126 536 Z" fill="url(#taxiBeam)" style="opacity:0; animation:taxiLights 16s linear both;"/>
-            <image href="bilder/taxi.png" x="120" y="472" width="200" height="75.5" style="filter:brightness(.74) contrast(1.05) saturate(.92);"/>
+            <filter id="taxiFx25" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.7281 0.0444 0.0045 0 -0.025  0.0132 0.7593 0.0045 0 -0.025  0.0132 0.0444 0.7193 0 -0.025  0 0 0 1 0" result="c"/></filter><image href="bilder/taxi.png" x="120" y="472" width="200" height="75.5" filter="url(#taxiFx25)"/>
           </g>
         </g>
       </sc-if>
@@ -524,10 +524,10 @@
       <g>
         <defs><clipPath id="clipPopM"><ellipse cx="575" cy="234" rx="41" ry="20"/><rect x="420" y="0" width="320" height="234"/></clipPath></defs>
         <ellipse cx="577" cy="506" rx="70" ry="10" fill="#000" opacity=".4"/>
-        <foreignObject x="472" y="154" width="210" height="352" style="overflow:visible;"><div xmlns="http://www.w3.org/1999/xhtml" style="width:210px; height:352px;"><img src="bilder/bin.png" alt="" style="width:210px; height:352px; object-fit:contain; display:block; filter:brightness(.72) saturate(.9) contrast(1.05) drop-shadow(0 10px 14px rgba(0,0,0,.6));"/></div></foreignObject>
+        <filter id="shadowFx21" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.6965 0.0541 0.0054 0 -0.025  0.0161 0.7345 0.0054 0 -0.025  0.0161 0.0541 0.6858 0 -0.025  0 0 0 1 0" result="c"/><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/bin.png" x="472" y="154" width="210" height="352" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx21)"></image>
         <g clip-path="url(#clipPopM)">
-          <g style="animation:popOut 6s ease-in-out infinite; transform:translateY(150px);">
-            <foreignObject x="528" y="127" width="95" height="117" style="overflow:visible;"><div xmlns="http://www.w3.org/1999/xhtml" style="width:95px; height:117px;"><img src="bilder/face.png" alt="Lorenz" style="width:95px; height:117px; object-fit:contain; display:block; filter:drop-shadow(0 10px 14px rgba(0,0,0,.6));"/></div></foreignObject>
+          <g class="pop-face" style="animation:popOut 6s ease-in-out infinite; transform:translateY(150px);">
+            <filter id="shadowFx23" x="-30%" y="-20%" width="160%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#000" flood-opacity=".6"/></filter><image href="bilder/face.png" x="528" y="127" width="95" height="117" preserveAspectRatio="xMidYMid meet" filter="url(#shadowFx23)"><title>Lorenz</title></image>
             <circle cx="564.5" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out infinite;"/>
             <circle cx="587" cy="185" r="1.9" fill="#15121c" style="transform-box:fill-box; transform-origin:center; animation:pupil 2.6s ease-in-out .12s infinite;"/>
           </g>
@@ -583,7 +583,7 @@
         <rect x="696" y="230" width="428" height="9" fill="#0f0b17"/><rect x="696" y="230" width="428" height="2" fill="#4a3d5c" opacity=".6"/>
         <g stroke="#0a0712" stroke-opacity=".5" stroke-width="1"><line x1="700" y1="300" x2="1120" y2="300"/><line x1="700" y1="360" x2="1120" y2="360"/><line x1="700" y1="420" x2="1120" y2="420"/></g>
         <g clip-path="url(#hallClipM)">
-          <foreignObject x="745" y="262" width="310" height="208"><div xmlns="http://www.w3.org/1999/xhtml" style="width:310px; height:208px; overflow:hidden; position:relative; border-radius:155px 155px 0 0 / 68px 68px 0 0; background:radial-gradient(90% 70% at 50% 42%, #2a0c2e 0%, #0d0616 60%, #05030a 100%);"><div style="position:absolute; left:0; right:0; bottom:0; height:44px; background:linear-gradient(180deg,#1a1224,#07050c); border-top:2px solid #3a2a48;"></div><div style="position:absolute; left:8px; right:8px; bottom:42px; height:5px; background:linear-gradient(90deg,#ff3366,#ffd86b,#00d4aa,#ff3366); filter:blur(2px); opacity:.7;"></div><div style="position:absolute; left:20px; right:20px; bottom:56px; height:130px; background:radial-gradient(60% 70% at 50% 60%, rgba(255,51,102,.55), rgba(255,51,102,0) 70%); filter:blur(8px);"></div><img src="bilder/prodigy-logo.jpg" alt="The Prodigy" style="position:absolute; left:25px; top:44px; width:260px; height:auto; display:block; filter:invert(1) drop-shadow(0 0 4px #fff) drop-shadow(0 0 14px #ff3366) drop-shadow(0 0 30px rgba(255,51,102,.8)); mix-blend-mode:screen; animation:neonBuzz 5s linear infinite;"/></div></foreignObject>
+          <defs><radialGradient id="hallBg13" cx=".5" cy=".42" r=".9" gradientTransform="translate(.5 .42) scale(1 .7778) translate(-.5 -.42)"><stop offset="0" stop-color="#2a0c2e"/><stop offset=".6" stop-color="#0d0616"/><stop offset="1" stop-color="#05030a"/></radialGradient><linearGradient id="hallFloor14" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1224"/><stop offset="1" stop-color="#07050c"/></linearGradient><linearGradient id="hallStrip15" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff3366"/><stop offset=".33" stop-color="#ffd86b"/><stop offset=".66" stop-color="#00d4aa"/><stop offset="1" stop-color="#ff3366"/></linearGradient><radialGradient id="hallGlow16" cx=".5" cy=".6" r=".7" gradientTransform="translate(.5 .6) scale(.857 1) translate(-.5 -.6)"><stop offset="0" stop-color="#ff3366" stop-opacity=".55"/><stop offset="1" stop-color="#ff3366" stop-opacity="0"/></radialGradient><filter id="blurS18" x="-5%" y="-200%" width="110%" height="500%"><feGaussianBlur stdDeviation="2"/></filter><filter id="blurL19" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="8"/></filter><filter id="logoFx17" x="-15%" y="-25%" width="130%" height="150%" color-interpolation-filters="sRGB"><feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -.2126 -.7152 -.0722 0 1" result="raw"/><feComposite in="raw" in2="SourceAlpha" operator="in" result="logo"/><feGaussianBlur in="logo" stdDeviation="1.2" result="w1"/><feGaussianBlur in="logo" stdDeviation="5" result="p1"/><feFlood flood-color="#ff3366" flood-opacity=".55"/><feComposite in2="p1" operator="in" result="g1"/><feGaussianBlur in="logo" stdDeviation="12" result="p2"/><feFlood flood-color="#ff3366" flood-opacity=".3"/><feComposite in2="p2" operator="in" result="g2"/><feMerge><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="w1"/><feMergeNode in="logo"/></feMerge></filter></defs><rect x="745" y="262" width="310" height="208" fill="url(#hallBg13)"/><rect x="765" y="284" width="270" height="130" fill="url(#hallGlow16)" filter="url(#blurL19)"/><g opacity=".55" filter="url(#blurL19)"><rect x="752" y="300" width="14" height="160" fill="#ff3366"/><rect x="1034" y="300" width="14" height="160" fill="#ff3366"/></g><rect x="753" y="423" width="294" height="5" fill="url(#hallStrip15)" opacity=".7" filter="url(#blurS18)"/><rect x="745" y="426" width="310" height="44" fill="url(#hallFloor14)"/><rect x="745" y="426" width="310" height="2" fill="#3a2a48"/><image href="bilder/prodigy-logo.jpg" x="770" y="306" width="260" height="146.25" preserveAspectRatio="xMidYMid meet" filter="url(#logoFx17)" style="animation:neonBuzz 5s linear infinite;"><title>The Prodigy</title></image>
           <rect x="745" y="262" width="310" height="208" fill="url(#hallVigM)"/>
           <rect x="745" y="262" width="310" height="208" fill="url(#hallVigXM)"/>
           <g style="mix-blend-mode:screen;">
@@ -644,7 +644,7 @@
         </g>
         <use href="#mini-ant-m" transform="translate(108 -32) rotate(220)"/><use href="#mini-ant-m" transform="translate(-100 -38) rotate(50)"/><use href="#mini-ant-m" transform="translate(52 108) rotate(305)"/>
       </g>
-      <g>
+      <g class="marchers">
         <use href="#mini-ant-m" style="animation:marchM 14s linear infinite"/>
         <use href="#mini-ant-m" style="animation:marchM 14s linear 2.6s infinite"/>
         <use href="#mini-ant-m" style="animation:marchM 14s linear 5.2s infinite"/>
@@ -844,6 +844,8 @@ class Component extends DCLogic {
       enterConcert: this.enterConcert, leaveConcert: this.leaveConcert, clickConcert: this.clickConcert,
       playBarTap: this.playBarTap, playConcertTap: this.playConcertTap,
       days: s.days == null ? '' : String(s.days),
+      daysEl: React.createElement('tspan', null, s.days == null ? '' : String(s.days)),
+      daysEl2: React.createElement('tspan', null, s.days == null ? '' : String(s.days)),
       isMobile: s.isMobile,
       isDesktop: !s.isMobile,
       soundIcon: s.soundOn ? '🔊' : '🔇',
